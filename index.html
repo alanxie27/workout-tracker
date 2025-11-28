@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Workout Tracker</h1>
+        <button id="lockToggle" class="lock-btn">🔓 Locked</button>
+    </header>
+
+    <main>
+        <section id="addExerciseSection" class="add-section">
+            <h2>Add Exercise</h2>
+            <input type="text" id="exerciseName" placeholder="Exercise Name">
+            <button id="addExerciseBtn" class="btn-primary">Add Exercise</button>
+        </section>
+
+        <section id="exercisesList" class="exercises-container">
+            <h2>Your Exercises</h2>
+            <div id="exercisesDisplay">
+                <p class="empty-state">No exercises added yet.</p>
+            </div>
+        </section>
+    </main>
+    
+    <script src="script.js"></script>
+</body>
+</html>
