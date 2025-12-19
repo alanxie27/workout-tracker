@@ -1,86 +1,258 @@
-/* Reset default browser styles */
+/* ========== GLOBAL RESET ========== */
+/* The * selector targets EVERY element on the page */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    margin: 0;      /* Remove default spacing outside elements (browsers add this by default) */
+    padding: 0;     /* Remove default spacing inside elements */
+    box-sizing: border-box;  /* Makes width/height include padding + border (easier to calculate sizes!) */
 }
 
-/* root variables for colors and fonts */
+/* ========== CSS VARIABLES (Custom Properties) ========== */
+/* :root is the HTML element - variables defined here can be used ANYWHERE */
+/* WHY? Change color once here, updates everywhere! var(--primary-color) */
 :root {
-    --primary-color: #4CAF50;      /* Green */
-    --secondary-color: #2196F3;    /* Blue */
-    --danger-color: #f44336;       /* Red */
-    --dark-bg: #1a1a1a;            /* Almost black */
-    --light-bg: #f5f5f5;           /* Light gray */
-    --text-dark: #333333;          /* Dark gray text */
+    --primary-color: #D4AF37;      /* Darker metallic gold - better contrast with white text */
+    --secondary-color: #2196F3;    /* Blue - for info/secondary actions */
+    --danger-color: #f44336;       /* Red - for delete/warning buttons */
+    --dark-bg: #1a1a1a;            /* Almost black background */
+    --light-bg: #f5f5f5;           /* Light gray background */
+    --text-dark: #333333;          /* Dark gray text (easier on eyes than pure black) */
     --text-light: #ffffff;         /* White text */
-    --border-radius: 8px;          /* Rounded corners */
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
+    --border-radius: 8px;          /* Rounded corners for all elements */
+    --spacing-sm: 8px;             /* Small spacing */
+    --spacing-md: 16px;            /* Medium spacing */
+    --spacing-lg: 24px;            /* Large spacing */
 }
 
-/* body: sets defaults for entire page */
+/* ========== PAGE-LEVEL SETTINGS ========== */
+/* html element - sets behavior for entire page */
+html {
+    scroll-behavior: smooth;  /* When clicking links, smoothly scroll instead of jumping */
+}
+
+/* All <section> elements get this animation when they first appear */
+section {
+    animation: fadeIn 0.5s ease-in;  /* Play "fadeIn" animation over 0.5 seconds */
+}
+
+/* @keyframes defines the animation steps (like a movie: from → to) */
+@keyframes fadeIn {
+    from {  /* Starting state (when element first appears) */
+        opacity: 0;                /* Invisible */
+        transform: translateY(20px);  /* 20px below final position */
+    }
+    to {  /* Ending state (after 0.5 seconds) */
+        opacity: 1;                /* Fully visible */
+        transform: translateY(0);   /* At final position */
+    }
+}
+
+/* ========== BODY (entire visible page) ========== */
 body {
+    /* System fonts (matches user's OS for familiar, crisp look) */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    padding: var(--spacing-md);
-    color: var(--text-dark);
 
+    /* Gradient background: 90deg = left to right, midnight blue → black */
+    background: linear-gradient(90deg, #191970 0%, #000000 100%);
+
+    min-height: 100vh;  /* vh = viewport height; 100vh = full screen height (no white space at bottom) */
+    padding: var(--spacing-md);  /* Uses the variable we defined earlier (16px) */
+    color: var(--text-dark);  /* Default text color for entire page */
 }
 
-/* header styling */
+/* ========== HEADER (top section with title) ========== */
 header {
-     background-color: rgba(255, 255, 255, 0.95);
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius);
+    /* rgba = red, green, blue, alpha (transparency); 0.95 = 95% opaque (slightly see-through) */
+    background-color: rgba(255, 255, 255, 0.95);
+
+    padding: var(--spacing-lg);  /* Space inside the header (24px all around) */
+    border-radius: var(--border-radius);  /* Rounded corners (8px) */
+
+    /* box-shadow: horizontal vertical blur color */
+    /* Creates subtle shadow below header for depth */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    /* FLEXBOX: arranges child elements in a row */
     display: flex;
-    /* flexbox for layout, space-between pushes items to opposite ends */
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
+    justify-content: space-between;  /* Pushes items to opposite ends (h1 left, buttons right) */
+    align-items: center;  /* Vertically centers items */
+
+    margin-bottom: var(--spacing-lg);  /* Space below header before next element */
 }
 
+/* Targets ONLY h1 that's INSIDE header */
 header h1 {
     color: var(--text-dark);
-    /* 2x the base font size */
-    font-size: 2rem;
-    margin: 0;
+    font-size: 2rem;  /* rem = relative to root font size; 2rem = 2x base size (usually 32px) */
+    margin: 0;  /* Remove default margin */
 }
 
-/* Button Styling */
+/* ========== BUTTONS ========== */
+/* Applies to ALL <button> elements */
 button {
-    padding: 12px 24px;
-    border: none;
-    border-radius: var(--border-radius);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    /* smooth transition for hover effects */
+    padding: 12px 24px;  /* Space inside: 12px top/bottom, 24px left/right */
+    border: none;  /* Remove default ugly button border */
+    border-radius: var(--border-radius);  /* Rounded corners */
+    font-size: 1rem;  /* Base font size (usually 16px) */
+    font-weight: 600;  /* Semi-bold text (400 = normal, 700 = bold) */
+    cursor: pointer;  /* Shows hand icon when hovering (indicates clickable) */
+
+    /* transition: smoothly animates changes (color, size, etc.) over 0.3 seconds */
     transition: all 0.3s ease;
 }
 
-.lock-btn {
-    background-color: var(--danger-color);
-    color: var(--text-light);
-}
-
-.lock-btn:hover {
-    background-color: #d32f2f;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
+/* Class selector: targets elements with class="btn-primary" */
 .btn-primary {
-    background-color: var(--primary-color);
-    color: var(--text-light);
+    background-color: var(--primary-color);  /* Gold background */
+    color: var(--text-light);  /* White text */
 }
 
+/* :hover = when mouse is over the button */
 .btn-primary:hover {
-    background-color: #45a049;
+    background-color: #B8941E;  /* Even darker gold on hover (creates depth effect) */
 }
+
+
+/* ========== MAIN CONTENT AREA ========== */
+main {
+    max-width: 800px;  /* Content never gets wider than 800px (readable width) */
+    margin: 0 auto;  /* 0 = no top/bottom margin; auto = center horizontally (equal left/right margins) */
+}
+
+/* ========== SECTIONS (content blocks) ========== */
+section {
+    background-color: rgba(255, 255, 255, 0.95);  /* White with slight transparency */
+    padding: var(--spacing-lg);  /* Space inside section (24px) */
+    border-radius: var(--border-radius);  /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
+    margin-bottom: var(--spacing-lg);  /* Space between sections */
+}
+
+/* h2 headings INSIDE sections */
+section h2 {
+    color: var(--text-dark);
+    margin-bottom: var(--spacing-md);  /* Space between heading and content below it */
+    font-size: 1.5rem;  /* 1.5x base size (usually 24px) */
+}
+
+.tabs {
+    display: flex;  /* Arrange tab buttons in a row */
+    gap: var(--spacing-sm);  /* Space between tab buttons */
+    margin-bottom: var(--spacing-md);  /* Space below tabs */
+}
+
+.tab-btn {
+    flex: 1;  /* Each tab button takes equal space */
+    padding: var(--spacing-md);  /* Space inside tab buttons */
+    background-color: #e0e0e0;  /* Light gray background */
+    border: none;  /* No border */
+    border-radius: var(--border-radius);  /* Rounded corners */
+    cursor: pointer;  /* Pointer cursor on hover */
+    transition: background-color 0.3s ease;  /* Smooth background color change */
+    font-weight: 600;  /* Semi-bold text */
+}
+
+.tab-btn.active {
+    background-color: var(--primary-color);  /* Gold background when active */
+    color: var(--text-light);  /* White text */
+
+    /* BOLD TEXT: font-weight values: 400=normal, 600=semi-bold, 700=bold */
+    font-weight: 700;  /* Make text bold */
+
+    /* BOTTOM BORDER: border-bottom affects only the bottom edge */
+    /* Format: width style color */
+    border-bottom: 3px solid var(--text-light);  /* 3px thick solid white line at bottom */
+}
+
+/* ========== WORKOUT DAY SECTIONS (show/hide based on active tab) ========== */
+/* Hide ALL workout-day sections by default */
+.workout-day {
+    display: none;  /* none = completely hidden (not taking up space) */
+}
+
+/* Show ONLY sections that have BOTH workout-day AND active classes */
+.workout-day.active {
+    display: block;  /* block = visible, takes full width, stacks vertically */
+}
+
+/* ========== INPUT FIELDS ========== */
+/* Attribute selector: targets inputs with type="text" OR type="number" */
+/* The comma (,) means "OR" - applies to both types */
+input[type="text"],
+input[type="number"] {
+    width: 100%;  /* Takes full width of parent container */
+    padding: 12px 16px;  /* Space inside input field */
+    border: 2px solid #ddd;  /* Light gray border */
+    border-radius: var(--border-radius);  /* Rounded corners */
+    font-size: 1rem;
+    margin-bottom: var(--spacing-md);  /* Space below input */
+    transition: border-color 0.3s ease;  /* Smoothly change border color when focused */
+}
+
+/* :focus = when user clicks into the input field */
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;  /* Remove default blue outline (we add custom styling instead) */
+    border-color: var(--primary-color);  /* Change border to gold when focused */
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);  /* Subtle gold glow around input */
+}
+
+/* ::placeholder = the gray hint text inside empty inputs */
+input::placeholder {
+    color: #999;  /* Gray color for placeholder text */
+}
+
+/* ========== RESPONSIVE DESIGN (for mobile) ========== */
+/* @media = "only apply these styles when condition is true" */
+/* max-width: 768px = screen width is 768px or SMALLER (tablets and phones) */
+@media (max-width: 768px) {
+    body {
+        padding: var(--spacing-sm);  /* Less padding on mobile (save space) */
+    }
+
+    header {
+        flex-direction: column;  /* Stack items vertically instead of horizontally */
+        gap: var(--spacing-md);  /* Space between stacked items */
+    }
+
+    header h1 {
+        font-size: 1.5rem;  /* Smaller heading on mobile */
+    }
+
+    button {
+        width: 100%;  /* Buttons take full width (easier to tap on mobile) */
+    }
+}
+
+/* ========== EXERCISE DISPLAY AREA ========== */
+/* Class selector for the container */
+.exercises-container {
+    min-height: 200px;  /* Minimum height (prevents collapsing when empty) */
+}
+
+/* ID selector: # means "element with id='exercisesDisplay'" */
+/* Only ONE element per page can have this ID */
+#exercisesDisplay {
+    display: grid;  /* CSS Grid layout (like a spreadsheet) */
+
+    /* grid-template-columns: defines column structure */
+    /* repeat() = repeat pattern */
+    /* auto-fill = create as many columns as fit */
+    /* minmax(280px, 1fr) = each column is minimum 280px, max 1 fraction of space */
+    /* Result: creates responsive card layout that wraps automatically! */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+
+    gap: var(--spacing-md);  /* Space between grid items (cards) */
+}
+
+/* Class for "No exercises yet" message */
+.empty-state {
+    text-align: center;  /* Center the text */
+    color: #666;  /* Medium gray */
+    padding: var(--spacing-lg);  /* Space around text */
+    font-style: italic;  /* Slanted text */
+}
+
+
 
 
 
