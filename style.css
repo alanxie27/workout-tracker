@@ -163,6 +163,14 @@ section h2 {
     border-bottom: 3px solid var(--text-light);  /* 3px thick solid white line at bottom */
 }
 
+.exercise-card {
+    background-color: rgba(255, 255, 255, 0.95);  /* White with slight transparency */
+    padding: var(--spacing-lg);  /* Space inside card */
+    border-radius: var(--border-radius);  /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
+    margin-bottom: var(--spacing-lg);  /* Space between cards */
+}
+
 /* ========== WORKOUT DAY SECTIONS (show/hide based on active tab) ========== */
 /* Hide ALL workout-day sections by default */
 .workout-day {
@@ -224,25 +232,14 @@ input::placeholder {
 }
 
 /* ========== EXERCISE DISPLAY AREA ========== */
-/* Class selector for the container */
-.exercises-container {
-    min-height: 200px;  /* Minimum height (prevents collapsing when empty) */
+
+.exercises-list {
+    display: flex;
+    flex-direction: column;  /* Stack items vertically */
+    gap: var(--spacing-md);  /* Space between list items */
 }
 
-/* ID selector: # means "element with id='exercisesDisplay'" */
-/* Only ONE element per page can have this ID */
-#exercisesDisplay {
-    display: grid;  /* CSS Grid layout (like a spreadsheet) */
 
-    /* grid-template-columns: defines column structure */
-    /* repeat() = repeat pattern */
-    /* auto-fill = create as many columns as fit */
-    /* minmax(280px, 1fr) = each column is minimum 280px, max 1 fraction of space */
-    /* Result: creates responsive card layout that wraps automatically! */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-
-    gap: var(--spacing-md);  /* Space between grid items (cards) */
-}
 
 /* Class for "No exercises yet" message */
 .empty-state {
