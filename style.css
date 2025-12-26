@@ -171,6 +171,11 @@ section h2 {
     margin-bottom: var(--spacing-lg);  /* Space between cards */
 }
 
+.exercise-card h3 {
+    margin-bottom: var(--spacing-md);
+    font-size: 1.5rem;
+}
+
 /* ========== WORKOUT DAY SECTIONS (show/hide based on active tab) ========== */
 /* Hide ALL workout-day sections by default */
 .workout-day {
@@ -238,8 +243,6 @@ input::placeholder {
     flex-direction: column;  /* Stack items vertically */
     gap: var(--spacing-md);  /* Space between list items */
 }
-
-
 
 /* Class for "No exercises yet" message */
 .empty-state {
