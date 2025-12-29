@@ -55,6 +55,7 @@ function renderAllExercises() {
                 <p>Current Reps: ${exercise.currentReps}</p>
                 <p>Increase Weight By: ${exercise.increaseWeightBy}</p>
                 <p>Go to Failure: ${exercise.goToFailure}</p>
+                <button class="btn-edit">Edit</button>
             `;
 
             exercisesList.appendChild(exerciseCard);
@@ -118,6 +119,7 @@ addExerciseBtn.addEventListener('click', function() {
         <p>Current Reps: </p>
         <p>Increase Weight By: </p>
         <p>Go to Failure: </p>
+        <button class="btn-edit">Edit</button>
     `
 
     const activeSection = document.querySelector('.workout-day.active');
@@ -162,3 +164,119 @@ addExerciseBtn.addEventListener('click', function() {
     localStorage.setItem('workoutData', JSON.stringify(workoutData));
 
 });
+
+// event delegation for edit buttons
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('btn-edit')) {
+        const exerciseCard = event.target.closest('.exercise-card');
+
+        const workoutSection = exerciseCard.closest('.workout-day');
+        const sectionId = workoutSection.id;
+        const workoutDay = sectionId.replace('-section', '');
+
+        const exercisesList = workoutSection.querySelector('.exercises-list');
+        const allCards = exercisesList.querySelectorAll('.exercise-card');
+        let exerciseIndex = -1;
+
+        allCards.forEach(function(card, index) {
+            if (card === exerciseCard) {
+                exerciseIndex = index;
+            }
+        });
+
+        const exercise = workoutData[workoutDay][exerciseIndex];
+
+        // replace card content with editable inputs
+        exerciseCard.innerHTML = `
+            <label>Exercise Name:</label>
+            <input type="text" class="edit-input" data-field="name" value="${exercise.name}">
+            
+            <label>Machine Position:</label>
+            <input type="text" class="edit-input" data-field="machinePosition" value="${exercise.machinePosition}">
+
+            <label>Tips:</label>
+            <textarea class="edit-input" data-field="tips" rows="3">${exercise.tips}</textarea>
+
+            <label>Starting Side:</label>
+            <input type="text" class="edit-input" data-field="startingSide" value="${exercise.startingSide}">
+
+            <label>Target Muscle:</label>
+            <input type="text" class="edit-input" data-field="targetMuscle" value="${exercise.targetMuscle}">
+            
+            <label>Sets:</label>
+            <input type="text" class="edit-input" data-field="sets" value="${exercise.sets}">
+            
+            <label>Reps:</label>
+            <input type="text" class="edit-input" data-field="reps" value="${exercise.reps}">
+            
+            <label>Rest:</label>
+            <input type="text" class="edit-input" data-field="rest" value="${exercise.rest}">
+            
+            <label>Current Weight:</label>
+            <input type="text" class="edit-input" data-field="currentWeight" value="${exercise.currentWeight}">
+            
+            <label>Current Reps:</label>
+            <input type="text" class="edit-input" data-field="currentReps" value="${exercise.currentReps}">
+            
+            <label>Increase Weight By:</label>
+            <input type="text" class="edit-input" data-field="increaseWeightBy" value="${exercise.increaseWeightBy}">
+
+            <label>Go to Failure:</label>
+            <select class="edit-input" data-field="goToFailure">
+                <option value="No" ${exercise.goToFailure === 'No' ? 'selected' : ''}>No</option>
+                <option value="Yes" ${exercise.goToFailure === 'Yes' ? 'selected' : ''}>Yes</option>
+            </select>
+
+            <button class="btn-save" data-day="${workoutDay}" data-index="${exerciseIndex}">Save</button>
+            <button class="btn-cancel">Cancel</button>
+        `;
+    }
+
+    if (event.target.classList.contains('btn-save')) {
+        const dataDay = event.target.dataset.day;
+        const dataIndex = event.target.dataset.index;
+        const exerciseCard = event.target.closest('.exercise-card');
+
+        const nameInput = exerciseCard.querySelector('.edit-input');
+        const newName = nameInput.value.trim();
+
+        if (newName === '') {
+            alert('Exercise name cannot be empty!');
+            return;
+        }
+
+        const inputs = exerciseCard.querySelectorAll('.edit-input');
+
+        //loop through each input
+        inputs.forEach(function(input) {
+            const field = input.dataset.field;
+            const value = input.value.trim();
+
+            workoutData[dataDay][dataIndex][field] = value;
+
+        });
+
+        // save to storage
+        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+
+        // clear all exercise lists
+        workoutSections.forEach(function(section) {
+        const list = section.querySelector('.exercises-list');
+        list.innerHTML = '<p class="empty-state">No exercises added yet.</p>';
+        });
+
+        // Then re-render from data
+        renderAllExercises();
+
+    }
+
+    if (event.target.classList.contains('btn-cancel')) {
+        // Clear all lists and re-render (discards unsaved changes)
+        workoutSections.forEach(function(section) {
+            const list = section.querySelector('.exercises-list');
+            list.innerHTML = '<p class="empty-state">No exercises added yet.</p>';
+        });
+        
+        renderAllExercises();
+    }
+ });

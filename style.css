@@ -111,6 +111,21 @@ button {
     background-color: #B8941E;  /* Even darker gold on hover (creates depth effect) */
 }
 
+.btn-edit {
+    background-color: var(--secondary-color);
+    color: var(--text-light);
+    margin-top: var(--spacing-md);
+    /* manually adjust position to top right*/
+    position: absolute;
+    top: 1px;
+    right: var(--spacing-md);
+    padding: 8px 16px;
+}
+
+.btn-edit:hover {
+    background-color: #1976d2
+}
+
 
 /* ========== MAIN CONTENT AREA ========== */
 main {
@@ -169,12 +184,147 @@ section h2 {
     border-radius: var(--border-radius);  /* Rounded corners */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
     margin-bottom: var(--spacing-lg);  /* Space between cards */
+    position: relative;
 }
 
 .exercise-card h3 {
     margin-bottom: var(--spacing-md);
     font-size: 1.5rem;
 }
+
+/* ========== EDIT MODE STYLING ==========
+   These styles appear when user clicks "Edit" button on an exercise card
+   The card transforms from view mode to edit mode with input fields */
+
+/* LABEL ELEMENTS: Text above input fields (like "Machine Position:", "Sets:", etc.) */
+.exercise-card label {
+    /* DISPLAY BLOCK: Makes label take full width and start on new line
+       Default for <label> is inline (sits next to other elements)
+       Block = stacks vertically, one per line */
+    display: block;
+
+    /* SPACING: Controls space above and below each label */
+    margin-top: var(--spacing-md);  /* 16px space above label (creates gap from previous field) */
+    margin-bottom: var(--spacing-sm);  /* 8px space below label (small gap before input) */
+
+    /* FONT WEIGHT: Makes label text semi-bold so it stands out from input text
+       Values: 400=normal, 600=semi-bold, 700=bold */
+    font-weight: 600;  /* Semi-bold text */
+
+    /* COLOR: Dark gray text for readability */
+    color: var(--text-dark);  /* #333 dark gray */
+}
+
+/* FIRST LABEL OVERRIDE: The very first label in edit mode
+   :first-of-type = pseudo-class that targets the first <label> element
+   Why? The first label needs different spacing since nothing is above it */
+.exercise-card label:first-of-type {
+    margin-top: var(--spacing-md);  /* Keep consistent top spacing for first label */
+}
+
+.edit-input[data-field="name"] {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+/* INPUT AND TEXTAREA FIELDS: All editable text fields when in edit mode */
+.edit-input {
+    /* WIDTH 100%: Input stretches to fill entire card width
+       Makes form look clean and organized */
+    width: 100%;
+
+    /* PADDING: Space inside the input field
+       Makes text not squished against edges, easier to read/type */
+    padding: 10px;  /* 10px of breathing room on all sides */
+
+    /* BORDER: Outline around input field
+       Format: width style color */
+    border: 2px solid #ddd;  /* 2px thick solid light gray border */
+
+    /* BORDER RADIUS: Rounded corners (matches card style) */
+    border-radius: var(--border-radius);  /* 8px rounded corners */
+
+    /* FONT SIZE: Text size inside input
+       1rem = 16px (browser default size) */
+    font-size: 1rem;
+
+    /* MARGIN BOTTOM: Space below each input before next label */
+    margin-bottom: var(--spacing-sm);  /* 8px gap */
+}
+
+/* INPUT FOCUS STATE: How input looks when user clicks into it
+   :focus = pseudo-class that activates when element is clicked/selected
+   Why? Gives visual feedback showing which field user is typing in */
+.edit-input:focus {
+    /* OUTLINE NONE: Removes default blue outline browsers add
+       We're replacing it with our own custom border color */
+    outline: none;
+
+    /* BORDER COLOR CHANGE: Changes border to gold when active
+       This highlights which field you're currently editing */
+    border-color: var(--primary-color);  /* Gold border (#D4AF37) */
+}
+
+/* TEXTAREA SPECIFIC: Only affects <textarea> elements with edit-input class
+   Why separate? Textareas have special properties that regular inputs don't */
+textarea.edit-input {
+    /* RESIZE VERTICAL: Allows user to drag bottom edge to make taller
+       Values: none (can't resize), horizontal, vertical, both
+       vertical = can only resize up/down (not left/right) */
+    resize: vertical;  /* User can make taller if needed */
+
+    /* FONT FAMILY INHERIT: Uses same font as parent element
+       Why? Textareas often default to monospace font (looks like code)
+       inherit = copy font from parent, keeps styling consistent */
+    font-family: inherit;  /* Match rest of page font */
+}
+
+/* SAVE AND CANCEL BUTTONS: Shared styles for both action buttons
+   Using comma (,) applies same rules to multiple selectors */
+.btn-save,
+.btn-cancel {
+    /* MARGIN TOP: Space above buttons (separates from input fields above) */
+    margin-top: var(--spacing-md);  /* 16px gap above buttons */
+
+    /* MARGIN RIGHT: Space between Save and Cancel buttons
+       Only affects left button (Save) since it's on the left */
+    margin-right: var(--spacing-sm);  /* 8px gap between buttons */
+}
+
+/* SAVE BUTTON: Primary action button (confirms edits) */
+.btn-save {
+    /* BACKGROUND: Gold color matches app theme
+       Primary action gets primary color */
+    background-color: var(--primary-color);  /* Metallic gold (#D4AF37) */
+
+    /* TEXT COLOR: White text on gold background */
+    color: var(--text-light);  /* White (#fff) */
+}
+
+/* SAVE BUTTON HOVER: Changes color when mouse hovers over it
+   :hover = pseudo-class that activates when mouse is over element
+   Gives feedback that button is clickable */
+.btn-save:hover {
+    /* Darker green on hover (provides visual feedback) */
+    background-color: #B8941E;  /* Darker gold shade */
+}
+
+/* CANCEL BUTTON: Secondary action button (discards edits) */
+.btn-cancel {
+    /* BACKGROUND: Gray color indicates less important action
+       Gray = neutral, doesn't encourage clicking like gold does */
+    background-color: #999;  /* Medium gray */
+
+    /* TEXT COLOR: White text on gray background */
+    color: var(--text-light);  /* White (#fff) */
+}
+
+/* CANCEL BUTTON HOVER: Darker gray on hover */
+.btn-cancel:hover {
+    /* Darker gray provides hover feedback */
+    background-color: #777;  /* Darker gray shade */
+}
+
 
 /* ========== WORKOUT DAY SECTIONS (show/hide based on active tab) ========== */
 /* Hide ALL workout-day sections by default */
