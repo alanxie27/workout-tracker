@@ -38,24 +38,25 @@ function renderAllExercises() {
         }
 
         //render each exercise
-        exercises.forEach(function(exercise) {
+        exercises.forEach(function(exercise, index) {
             // Create the card (same as before)
             const exerciseCard = document.createElement('div');
             exerciseCard.classList.add('exercise-card');
             exerciseCard.innerHTML = `
                 <h3>${exercise.name}</h3>
-                <p>Machine Position: ${exercise.machinePosition}</p>
-                <p>Tips: ${exercise.tips}</p>
-                <p>Starting Side: ${exercise.startingSide}</p>
-                <p>Target Muscle: ${exercise.targetMuscle}</p>
-                <p>Sets: ${exercise.sets}</p>
-                <p>Reps: ${exercise.reps}</p>
-                <p>Rest: ${exercise.rest}</p>
-                <p>Current Weight: ${exercise.currentWeight}</p>
-                <p>Current Reps: ${exercise.currentReps}</p>
-                <p>Increase Weight By: ${exercise.increaseWeightBy}</p>
-                <p>Go to Failure: ${exercise.goToFailure}</p>
+                <p><strong>Machine Position:</strong> ${exercise.machinePosition}</p>
+                <p><strong>Tips:</strong> ${exercise.tips}</p>
+                <p><strong>Starting Side:</strong> ${exercise.startingSide}</p>
+                <p><strong>Target Muscle:</strong> ${exercise.targetMuscle}</p>
+                <p><strong>Sets:</strong> ${exercise.sets}</p>
+                <p><strong>Reps:</strong> ${exercise.reps}</p>
+                <p><strong>Rest:</strong> ${exercise.rest}</p>
+                <p><strong>Current Weight:</strong> ${exercise.currentWeight}</p>
+                <p><strong>Current Reps:</strong> ${exercise.currentReps}</p>
+                <p><strong>Increase Weight By:</strong> ${exercise.increaseWeightBy}</p>
+                <p><strong>Go to Failure:</strong> ${exercise.goToFailure}</p>
                 <button class="btn-edit">Edit</button>
+                <button class="btn-delete" data-day="${day}" data-index="${index}">Delete</button>
             `;
 
             exercisesList.appendChild(exerciseCard);
@@ -278,5 +279,31 @@ document.addEventListener('click', function(event) {
         });
         
         renderAllExercises();
+    }
+
+    if (event.target.classList.contains('btn-delete')) {
+        const workoutDay = event.target.dataset.day;
+        const exerciseIndex = event.target.dataset.index;
+
+        // confirm 
+        if (confirm('Are you sure you want to delete this exercise?')) {
+
+            //remove exercise from array
+            workoutData[workoutDay].splice(exerciseIndex, 1);
+
+            // Save to localStorage
+            localStorage.setItem('workoutData', JSON.stringify(workoutData));
+
+            //re-render
+            workoutSections.forEach(function(section) {
+                const list = section.querySelector('.exercises-list');
+                list.innerHTML = '<p class="empty-state">No exercises added yet.</p>';
+            });
+
+            renderAllExercises();
+        }
+
+        
+        
     }
  });

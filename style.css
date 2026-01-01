@@ -118,7 +118,7 @@ button {
     /* manually adjust position to top right*/
     position: absolute;
     top: 1px;
-    right: var(--spacing-md);
+    right: 120px;
     padding: 8px 16px;
 }
 
@@ -126,6 +126,18 @@ button {
     background-color: #1976d2
 }
 
+.btn-delete {
+    background-color: var(--danger-color);
+    color: var(--text-light);
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    padding: 8px 16px;
+}
+
+.btn-delete:hover {
+    background-color: #d32f2f;
+}
 
 /* ========== MAIN CONTENT AREA ========== */
 main {
