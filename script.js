@@ -10,6 +10,21 @@ let workoutData = {
     lowerB: [],
 };
 
+// function to get paired workout day
+function getPairedWorkoutDay(workoutDay) {
+    if (workoutDay === 'upperA') {
+        return 'upperB';
+    } else if (workoutDay === 'upperB') {
+        return 'upperA';
+    } else if (workoutDay === 'lowerA') {
+        return 'lowerB';
+    } else if (workoutDay === 'lowerB') {
+        return 'lowerA';
+    }
+
+    return null;
+}
+
 //load data from localStorage when page loads
 function loadWorkoutData() {
     const savedData = localStorage.getItem('workoutData');
@@ -106,23 +121,6 @@ addExerciseBtn.addEventListener('click', function() {
     // add exercise-card class to it
     exerciseCard.classList.add('exercise-card');
 
-    // set inner HTML (content inside the card)
-    exerciseCard.innerHTML = `
-        <h3>${exerciseNameValue}</h3>
-        <p>Machine Position: </p>
-        <p>Tips: </p>
-        <p>Starting Side: </p>
-        <p>Target Muscle: </p>
-        <p>Sets: </p>
-        <p>Reps: </p>
-        <p>Rest: </p>
-        <p>Current Weight: </p>
-        <p>Current Reps: </p>
-        <p>Increase Weight By: </p>
-        <p>Go to Failure: </p>
-        <button class="btn-edit">Edit</button>
-    `
-
     const activeSection = document.querySelector('.workout-day.active');
 
     const exercisesList = activeSection.querySelector('.exercises-list');
@@ -131,12 +129,6 @@ addExerciseBtn.addEventListener('click', function() {
     if (emptyState) {
         emptyState.remove();
     }
-
-    // add card to list
-    exercisesList.appendChild(exerciseCard);
-
-    // clear input field
-    exerciseName.value = '';
 
     const activeSectionId = activeSection.id;
 
@@ -160,6 +152,33 @@ addExerciseBtn.addEventListener('click', function() {
 
     // add to correct workout day array
     workoutData[workoutDay].push(exerciseObj);
+
+    // Now get the correct index (after pushing to array)
+    const exerciseIndex = workoutData[workoutDay].length - 1;
+
+    // set inner HTML (content inside the card)
+    exerciseCard.innerHTML = `
+        <h3>${exerciseNameValue}</h3>
+        <p>Machine Position: </p>
+        <p>Tips: </p>
+        <p>Starting Side: </p>
+        <p>Target Muscle: </p>
+        <p>Sets: </p>
+        <p>Reps: </p>
+        <p>Rest: </p>
+        <p>Current Weight: </p>
+        <p>Current Reps: </p>
+        <p>Increase Weight By: </p>
+        <p>Go to Failure: </p>
+        <button class="btn-edit">Edit</button>
+        <button class="btn-delete" data-day="${workoutDay}" data-index="${exerciseIndex}">Delete</button>
+    `
+
+    // add card to list
+    exercisesList.appendChild(exerciseCard);
+
+    // clear input field
+    exerciseName.value = '';
 
     // save to localStorage
     localStorage.setItem('workoutData', JSON.stringify(workoutData));
@@ -259,6 +278,36 @@ document.addEventListener('click', function(event) {
 
         // save to storage
         localStorage.setItem('workoutData', JSON.stringify(workoutData));
+
+        // sync with paired workout day
+        const pairedDay = getPairedWorkoutDay(dataDay);
+
+        if (pairedDay) {
+            const exerciseName = workoutData[dataDay][dataIndex].name;
+
+             // Find exercise with same name in paired day
+            const pairedExercises = workoutData[pairedDay];
+
+            pairedExercises.forEach(function(exercise, index) {
+                if (exercise.name === exerciseName) {
+                    //copy all fields except name
+                    exercise.machinePosition = workoutData[dataDay][dataIndex].machinePosition;
+                    exercise.tips = workoutData[dataDay][dataIndex].tips;
+                    exercise.startingSide = workoutData[dataDay][dataIndex].startingSide;
+                    exercise.targetMuscle = workoutData[dataDay][dataIndex].targetMuscle;
+                    exercise.sets = workoutData[dataDay][dataIndex].sets;
+                    exercise.reps = workoutData[dataDay][dataIndex].reps;
+                    exercise.rest = workoutData[dataDay][dataIndex].rest;
+                    exercise.currentWeight = workoutData[dataDay][dataIndex].currentWeight;
+                    exercise.currentReps = workoutData[dataDay][dataIndex].currentReps;
+                    exercise.increaseWeightBy = workoutData[dataDay][dataIndex].increaseWeightBy;
+                    exercise.goToFailure = workoutData[dataDay][dataIndex].goToFailure;
+                }
+            });
+
+             // Save again after syncing
+            localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        }
 
         // clear all exercise lists
         workoutSections.forEach(function(section) {
