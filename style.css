@@ -114,10 +114,9 @@ button {
 .btn-edit {
     background-color: var(--secondary-color);
     color: var(--text-light);
-    margin-top: var(--spacing-md);
     /* manually adjust position to top right*/
     position: absolute;
-    top: 1px;
+    top: var(--spacing-md);
     right: 120px;
     padding: 8px 16px;
 }
@@ -137,6 +136,20 @@ button {
 
 .btn-delete:hover {
     background-color: #d32f2f;
+}
+
+.btn-quick-edit {
+    background-color: #551A8B;
+    color: var(--text-light);
+    position: absolute;
+    top: var(--spacing-md);  /* Same as Delete */
+    right: 205px;  /* Adjust to match spacing between Edit and Delete */
+    padding: 4px 16px;  /* Same as Edit and Delete */
+    font-size: 1rem;  /* Same as other buttons */
+}
+
+.btn-quick-edit:hover {
+    background-color: #4B0082;
 }
 
 /* ========== MAIN CONTENT AREA ========== */
@@ -202,6 +215,20 @@ section h2 {
 .exercise-card h3 {
     margin-bottom: var(--spacing-md);
     font-size: 1.5rem;
+}
+
+/* Add spacing between each field line */
+.exercise-card p {
+    margin-bottom: 10px;  /* 16px space between each field */
+}
+
+/* Inline field spacing (for Sets | Reps | Rest line) */
+.exercise-card p strong {
+    margin-left: 20px;  /* Space before each label */
+}
+
+.exercise-card p strong:first-child {
+    margin-left: 0;  /* No space before first label */
 }
 
 /* ========== EDIT MODE STYLING ==========
@@ -414,6 +441,48 @@ input::placeholder {
     font-style: italic;  /* Slanted text */
 }
 
+/* data management section */
+.data-management {
+    text-align: center;
+}
+
+.btn-secondary {
+    background-color: #757575;
+    color: var(--text-light);
+    margin: var(--spacing-sm);
+}
+
+.btn-secondary:hover {
+    background-color: #616161;
+}
+
+/* arrow buttons for reordering */
+.btn-arrow {
+    background-color: #9E9E9E;
+    color: var(--text-light);
+    padding: 8px 12px;
+    font-size: 1.2rem;
+    position: absolute;
+    bottom: var(--spacing-md);
+}
+
+.btn-up {
+    right: 80px;  /* Position to the left of down arrow */
+}
+
+.btn-down {
+    right: var(--spacing-md);  /* Far right position */
+}
+
+.btn-arrow:hover {
+    background-color: #757575;
+}
+
+.btn-arrow:disabled {
+    background-color: #E0E0E0;
+    color: #9E9E9E;
+    cursor: not-allowed;
+}
 
 
 
