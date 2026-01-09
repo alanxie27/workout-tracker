@@ -10,6 +10,25 @@ let workoutData = {
     lowerB: [],
 };
 
+// parse color syntax and convert to html
+function parseColorText(text) {
+    if (!text) return '';
+
+    // replace red, blue, yellow with span tags
+    let result = text;
+
+    // Replace *red*text*red* with red span
+    result = result.replace(/\*red\*(.*?)\*red\*/g, '<span style="color: #f44336;">$1</span>');
+    
+    // Replace *blue*text*blue* with blue span
+    result = result.replace(/\*blue\*(.*?)\*blue\*/g, '<span style="color: #2196F3;">$1</span>');
+    
+    // Replace *yellow*text*yellow* with yellow span
+    result = result.replace(/\*yellow\*(.*?)\*yellow\*/g, '<span style="color: #FFC107;">$1</span>');
+    
+    return result;
+}
+
 // function to get paired workout day
 function getPairedWorkoutDay(workoutDay) {
     if (workoutDay === 'upperA') {
@@ -58,22 +77,22 @@ function renderAllExercises() {
             const exerciseCard = document.createElement('div');
             exerciseCard.classList.add('exercise-card');
             exerciseCard.innerHTML = `
-                <h3>${exercise.name}</h3>
-                <p><strong>Tips:</strong> ${exercise.tips}</p>
-                <p><strong>Target Muscle:</strong> ${exercise.targetMuscle}</p>
-                <p><strong>Machine Position:</strong> ${exercise.machinePosition}</p>
-                <p><strong>Starting Side:</strong> ${exercise.startingSide}</p>
-                <p><strong>Sets:</strong> ${exercise.sets} <strong>Reps:</strong> ${exercise.reps} <strong>Rest:</strong> ${exercise.rest}</p>
-                <p><strong>Current Weight:</strong> ${exercise.currentWeight}</p>
-                <p><strong>Current Reps:</strong> ${exercise.currentReps}</p>
-                <p><strong>Increase Weight By:</strong> ${exercise.increaseWeightBy}</p>
-                <p><strong>Go to Failure:</strong> ${exercise.goToFailure}</p>
+                <h3>${parseColorText(exercise.name)}</h3>
+                <p><strong>Tips:</strong> ${parseColorText(exercise.tips)}</p>
+                <p><strong>Target Muscle:</strong> ${parseColorText(exercise.targetMuscle)}</p>
+                <p><strong>Machine Position:</strong> ${parseColorText(exercise.machinePosition)}</p>
+                <p><strong>Starting Side:</strong> ${parseColorText(exercise.startingSide)}</p>
+                <p><strong>Sets:</strong> ${parseColorText(exercise.sets)} <strong>Reps:</strong> ${parseColorText(exercise.reps)} <strong>Rest:</strong> ${parseColorText(exercise.rest)}</p>
+                <p><strong>Current Weight:</strong> ${parseColorText(exercise.currentWeight)}</p>
+                <p><strong>Current Reps:</strong> ${parseColorText(exercise.currentReps)}</p>
+                <p><strong>Increase Weight By:</strong> ${parseColorText(exercise.increaseWeightBy)}</p>
+                <p><strong>Go to Failure:</strong> ${parseColorText(exercise.goToFailure)}</p>
                 <button class="btn-arrow btn-up" data-day="${day}" data-index="${index}">↑</button>
                 <button class="btn-arrow btn-down" data-day="${day}" data-index="${index}">↓</button>
                 <button class="btn-quick-edit" data-day="${day}" data-index="${index}">⚡</button>
                 <button class="btn-edit">Edit</button>
                 <button class="btn-delete" data-day="${day}" data-index="${index}">Delete</button>
-            `;
+            `;  
 
             exercisesList.appendChild(exerciseCard);
 
