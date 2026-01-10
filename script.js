@@ -19,14 +19,26 @@ function parseColorText(text) {
 
     // Replace *red*text*red* with red span
     result = result.replace(/\*red\*(.*?)\*red\*/g, '<span style="color: #f44336;">$1</span>');
-    
+
     // Replace *blue*text*blue* with blue span
     result = result.replace(/\*blue\*(.*?)\*blue\*/g, '<span style="color: #2196F3;">$1</span>');
-    
+
     // Replace *yellow*text*yellow* with yellow span
     result = result.replace(/\*yellow\*(.*?)\*yellow\*/g, '<span style="color: #FFC107;">$1</span>');
-    
+
     return result;
+}
+
+// special function to parse "Go to Failure" field with orange color for DROP SET
+function parseGoToFailure(text) {
+    if (!text) return '';
+
+    // Make "DROP SET" orange in "Yes, also DROP SET!"
+    if (text.includes('DROP SET')) {
+        return text.replace('DROP SET', '<span style="color: #FF8C00;">DROP SET</span>');
+    }
+
+    return text;
 }
 
 // function to get paired workout day
@@ -83,16 +95,16 @@ function renderAllExercises() {
                 <p><strong>Machine Position:</strong> ${parseColorText(exercise.machinePosition)}</p>
                 <p><strong>Starting Side:</strong> ${parseColorText(exercise.startingSide)}</p>
                 <p><strong>Sets:</strong> ${parseColorText(exercise.sets)} <strong>Reps:</strong> ${parseColorText(exercise.reps)} <strong>Rest:</strong> ${parseColorText(exercise.rest)}</p>
+                <p><strong>Increase Weight By:</strong> ${parseColorText(exercise.increaseWeightBy)}</p>
+                <p><strong>Go to Failure:</strong> ${parseGoToFailure(exercise.goToFailure)}</p>
                 <p><strong>Current Weight:</strong> ${parseColorText(exercise.currentWeight)}</p>
                 <p><strong>Current Reps:</strong> ${parseColorText(exercise.currentReps)}</p>
-                <p><strong>Increase Weight By:</strong> ${parseColorText(exercise.increaseWeightBy)}</p>
-                <p><strong>Go to Failure:</strong> ${parseColorText(exercise.goToFailure)}</p>
                 <button class="btn-arrow btn-up" data-day="${day}" data-index="${index}">↑</button>
                 <button class="btn-arrow btn-down" data-day="${day}" data-index="${index}">↓</button>
                 <button class="btn-quick-edit" data-day="${day}" data-index="${index}">⚡</button>
                 <button class="btn-edit">Edit</button>
                 <button class="btn-delete" data-day="${day}" data-index="${index}">Delete</button>
-            `;  
+            `;
 
             exercisesList.appendChild(exerciseCard);
 
@@ -184,10 +196,10 @@ addExerciseBtn.addEventListener('click', function() {
         <p><strong>Machine Position:</strong> </p>
         <p><strong>Starting Side:</strong> </p>
         <p><strong>Sets:</strong>  <strong>Reps:</strong>  <strong>Rest:</strong> </p>
-        <p><strong>Current Weight:</strong> </p>
-        <p><strong>Current Reps:</strong> </p>
         <p><strong>Increase Weight By:</strong> </p>
         <p><strong>Go to Failure:</strong> </p>
+        <p><strong>Current Weight:</strong> </p>
+        <p><strong>Current Reps:</strong> </p>
         <button class="btn-arrow btn-up" data-day="${workoutDay}" data-index="${exerciseIndex}">↑</button>
         <button class="btn-arrow btn-down" data-day="${workoutDay}" data-index="${exerciseIndex}">↓</button>
         <button class="btn-quick-edit" data-day="${workoutDay}" data-index="${exerciseIndex}">⚡</button>
@@ -257,12 +269,6 @@ document.addEventListener('click', function(event) {
             <label>Rest:</label>
             <input type="text" class="edit-input" data-field="rest" value="${exercise.rest}">
 
-            <label>Current Weight:</label>
-            <input type="text" class="edit-input" data-field="currentWeight" value="${exercise.currentWeight}">
-
-            <label>Current Reps:</label>
-            <input type="text" class="edit-input" data-field="currentReps" value="${exercise.currentReps}">
-
             <label>Increase Weight By:</label>
             <input type="text" class="edit-input" data-field="increaseWeightBy" value="${exercise.increaseWeightBy}">
 
@@ -272,6 +278,12 @@ document.addEventListener('click', function(event) {
                 <option value="Yes" ${exercise.goToFailure === 'Yes' ? 'selected' : ''}>Yes</option>
                 <option value="Yes, also DROP SET!" ${exercise.goToFailure === 'Yes, also DROP SET!' ? 'selected' : ''}>Yes, also DROP SET!</option>
             </select>
+
+            <label>Current Weight:</label>
+            <input type="text" class="edit-input" data-field="currentWeight" value="${exercise.currentWeight}">
+
+            <label>Current Reps:</label>
+            <input type="text" class="edit-input" data-field="currentReps" value="${exercise.currentReps}">
 
             <button class="btn-save" data-day="${workoutDay}" data-index="${exerciseIndex}">Save</button>
             <button class="btn-cancel">Cancel</button>
