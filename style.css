@@ -515,26 +515,116 @@ input::placeholder {
 /* max-width: 768px = screen width is 768px or SMALLER (tablets and phones) */
 @media (max-width: 768px) {
     body {
-        padding: var(--spacing-sm);  /* Less padding on mobile (save space) */
+        padding: var(--spacing-md);
     }
 
     header {
-        flex-direction: column;  /* Stack items vertically instead of horizontally */
-        gap: var(--spacing-md);  /* Space between stacked items */
+        flex-direction: row;  /* Keep horizontal on mobile */
+        padding: var(--spacing-md);
     }
 
     header h1 {
-        font-size: 1.5rem;  /* Smaller heading on mobile */
+        font-size: 1.2rem;  /* Smaller title */
     }
 
-    button {
-        width: 100%;  /* Buttons take full width (easier to tap on mobile) */
+    /* Tabs: smaller and scrollable if needed */
+    .tabs {
+        gap: 6px;
+        overflow-x: auto;  /* Allow horizontal scroll if tabs don't fit */
     }
 
+    .tab-btn {
+        padding: 10px 12px;  /* Smaller padding */
+        font-size: 0.9rem;  /* Smaller text */
+        white-space: nowrap;  /* Prevent text wrapping */
+    }
+
+    /* Exercise cards: reduce padding and font sizes */
+    .exercise-card {
+        padding: var(--spacing-md);
+    }
+
+    .exercise-card h3 {
+        font-size: 1.2rem;
+        padding-right: 180px;  /* Make room for buttons */
+    }
+
+    .exercise-card p {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    /* Top-right buttons: make smaller and reposition */
+    .btn-quick-edit {
+        right: 150px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        top: 10px;
+    }
+
+    .btn-edit {
+        right: 80px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        top: 10px;
+    }
+
+    .btn-delete {
+        right: 10px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        top: 10px;
+    }
+
+    /* Bottom arrow buttons: smaller */
+    .btn-arrow {
+        padding: 6px 10px;
+        font-size: 1rem;
+        bottom: 10px;
+    }
+
+    .btn-up {
+        right: 60px;
+    }
+
+    .btn-down {
+        right: 10px;
+    }
+
+    /* Floating add button: smaller */
     .btn-float {
-        width: 60px;
-        height: 60px;   
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+        font-size: 1.5rem;
     }
+
+    /* Modal: full screen on mobile */
+    .modal-content {
+        width: 95%;
+        max-width: none;
+    }
+
+    /* Section spacing */
+    section {
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+
+    section h2 {
+        font-size: 1.2rem;
+    }
+
+    /* Buttons: don't make full width */
+    .btn-primary,
+    .btn-secondary,
+    .btn-cancel,
+    .btn-save {
+        width: auto;  /* Override the width: 100% */
+    }
+
+
 }
 
 /* ========== EXERCISE DISPLAY AREA ========== */
