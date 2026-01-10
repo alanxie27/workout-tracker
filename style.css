@@ -21,17 +21,14 @@
     --spacing-sm: 8px;             /* Small spacing */
     --spacing-md: 16px;            /* Medium spacing */
     --spacing-lg: 24px;            /* Large spacing */
+    --bg-card: #ffffff;            /* Card background for light mode */
 }
+
 
 /* ========== PAGE-LEVEL SETTINGS ========== */
 /* html element - sets behavior for entire page */
 html {
     scroll-behavior: smooth;  /* When clicking links, smoothly scroll instead of jumping */
-}
-
-/* All <section> elements get this animation when they first appear */
-section {
-    animation: fadeIn 0.5s ease-in;  /* Play "fadeIn" animation over 0.5 seconds */
 }
 
 /* @keyframes defines the animation steps (like a movie: from → to) */
@@ -48,21 +45,40 @@ section {
 
 /* ========== BODY (entire visible page) ========== */
 body {
-    /* System fonts (matches user's OS for familiar, crisp look) */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-
-    /* Gradient background: 90deg = left to right, midnight blue → black */
     background: linear-gradient(90deg, #191970 0%, #000000 100%);
+    min-height: 100vh;
+    padding: var(--spacing-md);
 
-    min-height: 100vh;  /* vh = viewport height; 100vh = full screen height (no white space at bottom) */
-    padding: var(--spacing-md);  /* Uses the variable we defined earlier (16px) */
-    color: var(--text-dark);  /* Default text color for entire page */
+    /* Light mode theme variables */
+    --bg-primary: #f5f5f5;
+    --bg-secondary: rgba(255, 255, 255, 0.95);
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --border-color: #ddd;
+    --theme-btn-color: rgb(44, 44, 44);  /* Light button for light mode */
+
+    color: var(--text-primary);  /* Use variable instead of hardcoded */
+}
+
+/* Dark mode theme */
+body.dark-mode {
+    /* Dark mode theme variables */
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;        /* Darker sections */
+    --bg-card: #2d2d2d;             /* Lighter cards that stand out */
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --border-color: #404040;
+    --theme-btn-color: #333333;     /* Dark button for dark mode */
+
+    color: var(--text-primary);
 }
 
 /* ========== HEADER (top section with title) ========== */
 header {
     /* rgba = red, green, blue, alpha (transparency); 0.95 = 95% opaque (slightly see-through) */
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: var(--bg-secondary);
 
     padding: var(--spacing-lg);  /* Space inside the header (24px all around) */
     border-radius: var(--border-radius);  /* Rounded corners (8px) */
@@ -81,7 +97,7 @@ header {
 
 /* Targets ONLY h1 that's INSIDE header */
 header h1 {
-    color: var(--text-dark);
+    color: var(--text-primary);
     font-size: 2rem;  /* rem = relative to root font size; 2rem = 2x base size (usually 32px) */
     margin: 0;  /* Remove default margin */
 }
@@ -109,6 +125,19 @@ button {
 /* :hover = when mouse is over the button */
 .btn-primary:hover {
     background-color: #B8941E;  /* Even darker gold on hover (creates depth effect) */
+}
+
+.btn-theme {
+    background-color: var(--theme-btn-color);  /* Inverse color - light in light mode, dark in dark mode */
+    border: 2px solid var(--theme-btn-color);
+    color: var(--text-primary);  /* Text stays readable */
+    padding: 8px 16px;
+    font-size: 1.5rem;
+    margin-left: auto;
+}
+
+.btn-theme:hover {
+    opacity: 0.8;  /* Slightly transparent on hover for feedback */
 }
 
 .btn-edit {
@@ -152,6 +181,69 @@ button {
     background-color: #4B0082;
 }
 
+.btn-float {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: var(--text-light);
+    font-size: 2rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: all 0.3s ease;
+
+    /* fix centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* override global button padding/baseline */
+    padding: 0;
+    line-height: 1;
+}
+
+.btn-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius);
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h2 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+
 /* ========== MAIN CONTENT AREA ========== */
 main {
     max-width: 800px;  /* Content never gets wider than 800px (readable width) */
@@ -160,16 +252,17 @@ main {
 
 /* ========== SECTIONS (content blocks) ========== */
 section {
-    background-color: rgba(255, 255, 255, 0.95);  /* White with slight transparency */
+    background-color: var(--bg-secondary);  /* White with slight transparency */
     padding: var(--spacing-lg);  /* Space inside section (24px) */
     border-radius: var(--border-radius);  /* Rounded corners */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
     margin-bottom: var(--spacing-lg);  /* Space between sections */
+    animation: fadeIn 0.5s ease-in;  /* Play "fadeIn" animation over 0.5 seconds */
 }
 
 /* h2 headings INSIDE sections */
 section h2 {
-    color: var(--text-dark);
+    color: var(--text-primary);
     margin-bottom: var(--spacing-md);  /* Space between heading and content below it */
     font-size: 1.5rem;  /* 1.5x base size (usually 24px) */
 }
@@ -183,7 +276,8 @@ section h2 {
 .tab-btn {
     flex: 1;  /* Each tab button takes equal space */
     padding: var(--spacing-md);  /* Space inside tab buttons */
-    background-color: #e0e0e0;  /* Light gray background */
+    background-color: var(--bg-card);  /* Use theme background */
+    color: var(--text-primary);  /* Use theme text color */
     border: none;  /* No border */
     border-radius: var(--border-radius);  /* Rounded corners */
     cursor: pointer;  /* Pointer cursor on hover */
@@ -204,7 +298,7 @@ section h2 {
 }
 
 .exercise-card {
-    background-color: rgba(255, 255, 255, 0.95);  /* White with slight transparency */
+    background-color: var(--bg-card);  /* Use card background for better contrast */
     padding: var(--spacing-lg);  /* Space inside card */
     border-radius: var(--border-radius);  /* Rounded corners */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
@@ -225,6 +319,7 @@ section h2 {
 /* Inline field spacing (for Sets | Reps | Rest line) */
 .exercise-card p strong {
     margin-left: 20px;  /* Space before each label */
+    margin-right: 4px;  /* Space after each label (between label and value) */
 }
 
 .exercise-card p strong:first-child {
@@ -251,7 +346,7 @@ section h2 {
     font-weight: 600;  /* Semi-bold text */
 
     /* COLOR: Dark gray text for readability */
-    color: var(--text-dark);  /* #333 dark gray */
+    color: var(--text-primary);  /* #333 dark gray */
 }
 
 /* FIRST LABEL OVERRIDE: The very first label in edit mode
@@ -278,7 +373,7 @@ section h2 {
 
     /* BORDER: Outline around input field
        Format: width style color */
-    border: 2px solid #ddd;  /* 2px thick solid light gray border */
+    border: 2px solid var(--border-color);  /* Use theme border color */
 
     /* BORDER RADIUS: Rounded corners (matches card style) */
     border-radius: var(--border-radius);  /* 8px rounded corners */
@@ -286,6 +381,10 @@ section h2 {
     /* FONT SIZE: Text size inside input
        1rem = 16px (browser default size) */
     font-size: 1rem;
+
+    /* BACKGROUND AND TEXT: Use theme colors for dark mode support */
+    background-color: var(--bg-card);  /* Same as other input fields */
+    color: var(--text-primary);  /* Visible text color */
 
     /* MARGIN BOTTOM: Space below each input before next label */
     margin-bottom: var(--spacing-sm);  /* 8px gap */
@@ -316,6 +415,12 @@ textarea.edit-input {
        Why? Textareas often default to monospace font (looks like code)
        inherit = copy font from parent, keeps styling consistent */
     font-family: inherit;  /* Match rest of page font */
+}
+
+/* SELECT DROPDOWNS: Style dropdown menus to match theme */
+select.edit-input {
+    /* Ensure dropdowns match the input styling */
+    cursor: pointer;  /* Show pointer cursor on hover */
 }
 
 /* SAVE AND CANCEL BUTTONS: Shared styles for both action buttons
@@ -383,7 +488,9 @@ input[type="text"],
 input[type="number"] {
     width: 100%;  /* Takes full width of parent container */
     padding: 12px 16px;  /* Space inside input field */
-    border: 2px solid #ddd;  /* Light gray border */
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-card);  /* Use card background for better visibility */
+    color: var(--text-primary);  /* Ensure text is visible */
     border-radius: var(--border-radius);  /* Rounded corners */
     font-size: 1rem;
     margin-bottom: var(--spacing-md);  /* Space below input */
@@ -422,6 +529,11 @@ input::placeholder {
 
     button {
         width: 100%;  /* Buttons take full width (easier to tap on mobile) */
+    }
+
+    .btn-float {
+        width: 60px;
+        height: 60px;   
     }
 }
 

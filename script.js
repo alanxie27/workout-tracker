@@ -188,7 +188,9 @@ addExerciseBtn.addEventListener('click', function() {
         <p><strong>Current Reps:</strong> </p>
         <p><strong>Increase Weight By:</strong> </p>
         <p><strong>Go to Failure:</strong> </p>
-        <button class="btn-quick-edit">⚡</button>
+        <button class="btn-arrow btn-up" data-day="${workoutDay}" data-index="${exerciseIndex}">↑</button>
+        <button class="btn-arrow btn-down" data-day="${workoutDay}" data-index="${exerciseIndex}">↓</button>
+        <button class="btn-quick-edit" data-day="${workoutDay}" data-index="${exerciseIndex}">⚡</button>
         <button class="btn-edit">Edit</button>
         <button class="btn-delete" data-day="${workoutDay}" data-index="${exerciseIndex}">Delete</button>
     `
@@ -201,6 +203,10 @@ addExerciseBtn.addEventListener('click', function() {
 
     // save to localStorage
     localStorage.setItem('workoutData', JSON.stringify(workoutData));
+
+    // After you clear the input field, add:
+    addExerciseModal.classList.remove('active');
+
 
 });
 
@@ -313,7 +319,6 @@ document.addEventListener('click', function(event) {
                     //copy all fields except name
                     exercise.machinePosition = workoutData[dataDay][dataIndex].machinePosition;
                     exercise.tips = workoutData[dataDay][dataIndex].tips;
-                    exercise.startingSide = workoutData[dataDay][dataIndex].startingSide;
                     exercise.targetMuscle = workoutData[dataDay][dataIndex].targetMuscle;
                     exercise.sets = workoutData[dataDay][dataIndex].sets;
                     exercise.reps = workoutData[dataDay][dataIndex].reps;
@@ -575,3 +580,56 @@ importFile.addEventListener('change', function(event) {
         reader.readAsText(file);
     }
 });
+
+const darkModeToggle = document.getElementById('darkModeToggle');
+
+// apply dark mode on default
+document.body.classList.add('dark-mode');
+
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+    document.body.classList.remove('dark-mode');
+    darkModeToggle.textContent = '🌙';
+}
+
+// toggle dark mode on button click
+darkModeToggle.addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
+
+    // Update button icon
+    if (document.body.classList.contains('dark-mode')) {
+        darkModeToggle.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        darkModeToggle.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+    }
+
+});
+
+// add exercise moda controls
+const showAddModal = document.getElementById('showAddModal');
+const addExerciseModal = document.getElementById('addExerciseModal');
+const closeModal = document.getElementById('closeModal');
+
+showAddModal.addEventListener('click', function() {
+    addExerciseModal.classList.add('active');
+    document.getElementById('exerciseName').focus();
+});
+
+closeModal.addEventListener('click', function() {
+    addExerciseModal.classList.remove('active');
+    // Clear input field
+    document.getElementById('exerciseName').value = '';
+});
+
+addExerciseModal.addEventListener('click', function(event) {
+    // event.target is what was clicked
+    // If they clicked the dark overlay (not the white box), close it
+    if (event.target === addExerciseModal) {
+        addExerciseModal.classList.remove('active');
+        document.getElementById('exerciseName').value = '';
+    }
+});
+
+
