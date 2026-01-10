@@ -556,7 +556,7 @@ input::placeholder {
 
     /* Top-right buttons: make smaller and reposition */
     .btn-quick-edit {
-        right: 140px; /* test this to adjust button */
+        right: 135px; /* test this to adjust button */
         padding: 6px 10px;
         font-size: 0.85rem;
         top: 10px;
