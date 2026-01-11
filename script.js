@@ -10,6 +10,92 @@ let workoutData = {
     lowerB: [],
 };
 
+let completionData = {
+    upperA: null,
+    lowerA: null,
+    upperB: null,
+    lowerB: null,
+    weekStart: null
+}
+
+// Workout order for auto-progression
+const workoutOrder = ['upperA', 'lowerA', 'upperB', 'lowerB'];
+
+// load completion data from localStorage
+function loadCompletionData() {
+    const saved = localStorage.getItem('completionData');
+    if (saved) {
+        completionData = JSON.parse(saved);
+
+    // check if it's a new week (monday)
+    const now = new Date();
+    const currentMonday = getMondayOfWeek(now);
+
+    if (!completionData.weekStart || new Date(completionData.weekStart) < currentMonday) {
+        resetWeekCompletion();
+    }
+
+    updateTabCheckmarks();
+    } else {
+        // first time, set week start
+        completionData.weekStart = getMondayOfWeek(new Date()).toISOString();
+        saveCompletionData();
+    }
+}
+
+// get monday of current week
+function getMondayOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const monday = new Date(d.setDate(diff));
+
+    monday.setHours(0,0,0,0);
+    
+    return monday;
+}
+
+// reset completion for new week
+function resetWeekCompletion() {
+    completionData = {
+        upperA: null,
+        lowerA: null,
+        upperB: null,
+        lowerB: null,
+        weekStart: getMondayOfWeek(new Date()).toISOString()
+    };
+    saveCompletionData();
+    updateTabCheckmarks();
+}
+
+// Save completion data
+function saveCompletionData() {
+    localStorage.setItem('completionData', JSON.stringify(completionData));
+}
+
+// update tab checkmarks
+function updateTabCheckmarks() {
+    workoutOrder.forEach(day => {
+        const tab = document.getElementById('tab-' + day);
+        if (completionData[day]) {
+            tab.classList.add('completed');
+        } else {
+            tab.classList.remove('completed');
+        }
+    });
+}
+
+// get next incomplete workout
+function getNextIncompleteWorkout() {
+    for (let day of workoutOrder) {
+        if (!completionData[day]) {
+            return day;
+        }
+    }
+    // All complete - return first
+    return 'upperA';
+}
+
 // parse color syntax and convert to html
 function parseColorText(text) {
     if (!text) return '';
@@ -644,6 +730,56 @@ addExerciseModal.addEventListener('click', function(event) {
     if (event.target === addExerciseModal) {
         addExerciseModal.classList.remove('active');
         document.getElementById('exerciseName').value = '';
+    }
+});
+
+// load completion data andswitch to next incomplete workout
+loadCompletionData();
+
+// auto-switch to next incomplete workout on page load
+const nextWorkout = getNextIncompleteWorkout();
+const nextTab = document.getElementById('tab-' + nextWorkout);
+if (nextTab && !nextTab.classList.contains('active')) {
+    // trigger click on next incomplete workout tab
+    nextTab.click();
+}
+
+// Complete Workout button handlers
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('btn-complete-workout')) {
+        const workoutDay = event.target.dataset.day;
+        const currentDate = new Date().toISOString();
+        
+        // Find index of completed workout
+        const completedIndex = workoutOrder.indexOf(workoutDay);
+        
+        // Auto-complete everything BEFORE this workout in the sequence
+        for (let i = 0; i <= completedIndex; i++) {
+            completionData[workoutOrder[i]] = currentDate;
+        }
+        
+        saveCompletionData();
+        updateTabCheckmarks();
+        
+        // Check if all workouts are complete
+        const allComplete = workoutOrder.every(day => completionData[day]);
+        
+        if (allComplete) {
+            alert('🎉 Week Complete! All workouts done. Great job!');
+            // Stay on current tab
+        } else {
+            // Find next incomplete workout
+            const nextIndex = (completedIndex + 1) % workoutOrder.length;
+            const nextDay = workoutOrder[nextIndex];
+            
+            // Switch to next tab
+            const nextTabBtn = document.getElementById('tab-' + nextDay);
+            if (nextTabBtn) {
+                nextTabBtn.click();
+            }
+            
+            alert('✓ Workout completed! Moving to next workout.');
+        }
     }
 });
 
