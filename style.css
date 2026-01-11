@@ -140,6 +140,20 @@ button {
     opacity: 0.8;  /* Slightly transparent on hover for feedback */
 }
 
+.btn-complete-workout {
+    width: 100%;
+    margin-top: var(--spacing-lg);
+    background-color: var(--primary-color);
+    color: var(--text-light);
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.btn-complete-workout:hover {
+    background-color: #B8941E;
+}
+
 .btn-edit {
     background-color: var(--secondary-color);
     color: var(--text-light);
@@ -295,6 +309,17 @@ section h2 {
     /* BOTTOM BORDER: border-bottom affects only the bottom edge */
     /* Format: width style color */
     border-bottom: 3px solid var(--text-light);  /* 3px thick solid white line at bottom */
+}
+
+/* Completed tab styling */
+.tab-btn.completed {
+    opacity: 0.5;
+    position: relative;
+}
+
+.tab-btn.completed::after {
+    content: " ✓";
+    color: #4CAF50;
 }
 
 .exercise-card {

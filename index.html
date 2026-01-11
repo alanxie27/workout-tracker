@@ -27,13 +27,9 @@
     <main>
         <!-- DIV: Generic container for grouping (just for styling, no special meaning) -->
         <div class="tabs">
-            <!-- BUTTON elements with different attributes: -->
-            <!-- id = unique identifier (only this button has this id) -->
-            <!-- class = reusable label (multiple elements can share same class) -->
-            <!-- "active" class marks which tab is currently selected -->
             <button id="tab-upperA" class="tab-btn active">Upper Body A</button>
-            <button id="tab-upperB" class="tab-btn">Upper Body B</button>
             <button id="tab-lowerA" class="tab-btn">Lower Body A</button>
+            <button id="tab-upperB" class="tab-btn">Upper Body B</button>
             <button id="tab-lowerB" class="tab-btn">Lower Body B</button>
         </div>
 
@@ -42,6 +38,7 @@
             <div class="exercises-list">
                 <p class="empty-state">No exercises added yet.</p> <!-- Placeholder text when no exercises are present -->
             </div>
+            <button class="btn-complete-workout" data-day="upperA">✓ Complete Upper A</button>
         </section>
 
          <section id="upperB-section" class="workout-day">
@@ -49,6 +46,7 @@
             <div class="exercises-list">
                 <p class="empty-state">No exercises added yet.</p> <!-- Placeholder text when no exercises are present -->
             </div>
+            <button class="btn-complete-workout" data-day="upperB">✓ Complete Upper B</button>
         </section>
 
          <section id="lowerA-section" class="workout-day">
@@ -56,6 +54,7 @@
             <div class="exercises-list">
                 <p class="empty-state">No exercises added yet.</p> <!-- Placeholder text when no exercises are present -->
             </div>
+            <button class="btn-complete-workout" data-day="lowerA">✓ Complete Lower A</button>
         </section>
 
          <section id="lowerB-section" class="workout-day">
@@ -63,13 +62,11 @@
             <div class="exercises-list">
                 <p class="empty-state">No exercises added yet.</p> <!-- Placeholder text when no exercises are present -->
             </div>
+            <button class="btn-complete-workout" data-day="lowerB">✓ Complete Lower B</button>
         </section>
 
         <!-- Floating Add Button -->
         <button id="showAddModal" class="btn-float">+</button>
-
-        <!-- floating timer button-->
-        <button id="showTimerModal" class="btn-float btn-float-timer">⏱️</button>
 
         <!-- Add Exercise Modal (hidden by default) -->
         <div id="addExerciseModal" class="modal">

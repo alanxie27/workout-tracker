@@ -14,7 +14,7 @@ let workoutData = {
 function parseColorText(text) {
     if (!text) return '';
 
-    // replace red, blue, yellow with span tags
+    // replace red, blue, yellow, orange with span tags
     let result = text;
 
     // Replace *red*text*red* with red span
@@ -25,6 +25,9 @@ function parseColorText(text) {
 
     // Replace *yellow*text*yellow* with yellow span
     result = result.replace(/\*yellow\*(.*?)\*yellow\*/g, '<span style="color: #FFC107;">$1</span>');
+
+    // Replace *orange*text*orange* with orange span
+    result = result.replace(/\*orange\*(.*?)\*orange\*/g, '<span style="color: #FF8C00;">$1</span>');
 
     return result;
 }
