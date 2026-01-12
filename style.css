@@ -680,13 +680,20 @@ input::placeholder {
         padding: var(--spacing-md);
         /* Add extra padding at bottom for arrow buttons */
         padding-bottom: 60px;
+        /* Use flexbox to reorder elements on mobile */
+        display: flex;
+        flex-direction: column;
     }
 
     .exercise-card h3 {
         font-size: 1.2rem;
-        /* Make room for buttons - give consistent padding */
-        padding-right: 200px;
+        /* Title goes below buttons on mobile */
+        order: 1;
+        /* No padding needed - full width now */
+        padding-right: 0;
         margin-bottom: var(--spacing-md);
+        /* Add top margin to separate from buttons */
+        margin-top: var(--spacing-md);
         /* Prevent text from being cut off */
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -695,6 +702,8 @@ input::placeholder {
     .exercise-card p {
         font-size: 0.9rem;
         margin-bottom: 8px;
+        /* Content goes after title */
+        order: 2;
         /* Ensure text wraps properly and doesn't overflow */
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -702,6 +711,8 @@ input::placeholder {
 
     /* Top-right buttons: make smaller and reposition */
     .btn-quick-edit {
+        /* Buttons stay at top */
+        order: 0;
         right: 135px;
         padding: 6px 10px;
         font-size: 0.85rem;
@@ -709,6 +720,7 @@ input::placeholder {
     }
 
     .btn-edit {
+        order: 0;
         right: 80px;
         padding: 6px 10px;
         font-size: 0.85rem;
@@ -716,6 +728,7 @@ input::placeholder {
     }
 
     .btn-delete {
+        order: 0;
         right: 10px;
         padding: 6px 10px;
         font-size: 0.85rem;
