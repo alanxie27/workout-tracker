@@ -65,6 +65,9 @@
             <button class="btn-complete-workout" data-day="lowerB">✓ Complete Lower B</button>
         </section>
 
+        <!-- floating history button-->
+        <button id="showHistoryModal" class="btn-float btn-float-history">📅</button>
+
         <!-- Floating Add Button -->
         <button id="showAddModal" class="btn-float">+</button>
 
@@ -78,6 +81,24 @@
             </div>
         </div>
 
+        <!-- History Modal (hidden by default) -->
+        <div id="historyModal" class="modal">
+            <div class="modal-content">
+                <h2>Workout History</h2>
+                
+                <div class="stats-summary">
+                    <p>🔥 <strong>Streak:</strong> <span id="streakCount">0 weeks</span></p>
+                    <p>📅 <strong>This Month:</strong> <span id="monthCount">0 workouts</span></p>
+                </div>
+                
+                <h3 class="history-heading">Recent Activity</h3>
+                <div id="historyList" class="history-list">
+                    <p class="empty-state">No workouts completed yet.</p>
+                </div>
+                
+                <button id="closeHistoryModal" class="btn-cancel">Close</button>
+            </div>
+        </div>
         
 
         <section class="data-management">

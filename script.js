@@ -51,7 +51,7 @@ function getMondayOfWeek(date) {
     const monday = new Date(d.setDate(diff));
 
     monday.setHours(0,0,0,0);
-    
+
     return monday;
 }
 
@@ -757,6 +757,9 @@ document.addEventListener('click', function(event) {
         for (let i = 0; i <= completedIndex; i++) {
             completionData[workoutOrder[i]] = currentDate;
         }
+
+        // Add to history
+        addToHistory(workoutDay);
         
         saveCompletionData();
         updateTabCheckmarks();
@@ -784,3 +787,140 @@ document.addEventListener('click', function(event) {
 });
 
 
+// Workout History Tracking
+let workoutHistory = [];
+
+// Load workout history from localStorage
+function loadWorkoutHistory() {
+    const saved = localStorage.getItem('workoutHistory');
+    if (saved) {
+        workoutHistory = JSON.parse(saved);
+    }
+}
+
+// Save workout history
+function saveWorkoutHistory() {
+    localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+}
+
+// Add workout to history
+function addToHistory(workoutDay) {
+    const historyEntry = {
+        date: new Date().toISOString(),
+        workout: workoutDay
+    };
+    workoutHistory.unshift(historyEntry); // Add to beginning of array
+    saveWorkoutHistory();
+}
+
+// Calculate streak (consecutive weeks with all 4 workouts)
+function calculateStreak() {
+    if (workoutHistory.length === 0) return 0;
+    
+    let streak = 0;
+    let checkDate = new Date();
+    
+    // Start from current week and go backwards
+    for (let weekOffset = 0; weekOffset < 52; weekOffset++) {
+        const weekStart = getMondayOfWeek(checkDate);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        // Get all workouts in this week
+        const workoutsThisWeek = workoutHistory.filter(entry => {
+            const entryDate = new Date(entry.date);
+            return entryDate >= weekStart && entryDate < weekEnd;
+        });
+        
+        // Check if all 4 workout types were completed
+        const workoutTypes = new Set(workoutsThisWeek.map(w => w.workout));
+        
+        if (workoutTypes.has('upperA') && workoutTypes.has('lowerA') && 
+            workoutTypes.has('upperB') && workoutTypes.has('lowerB')) {
+            streak++;
+            // Go back one week
+            checkDate.setDate(checkDate.getDate() - 7);
+        } else {
+            // Week incomplete - streak ends
+            break;
+        }
+    }
+    
+    return streak;
+}
+// Calculate workouts this month
+function calculateMonthWorkouts() {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return workoutHistory.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate.getMonth() === currentMonth && 
+               entryDate.getFullYear() === currentYear;
+    }).length;
+}
+
+// Render history list
+function renderHistory() {
+    const historyList = document.getElementById('historyList');
+    const streakCount = document.getElementById('streakCount');
+    const monthCount = document.getElementById('monthCount');
+    
+    // Update stats
+    const streak = calculateStreak();
+    const monthWorkouts = calculateMonthWorkouts();
+    
+    streakCount.textContent = streak + (streak === 1 ? ' week' : ' weeks');
+    monthCount.textContent = monthWorkouts + (monthWorkouts === 1 ? ' workout' : ' workouts');
+    
+    // Render history items
+    if (workoutHistory.length === 0) {
+        historyList.innerHTML = '<p class="empty-state">No workouts completed yet.</p>';
+        return;
+    }
+    
+    // Show last 20 workouts
+    const recentWorkouts = workoutHistory.slice(0, 20);
+    
+    historyList.innerHTML = recentWorkouts.map(entry => {
+        const date = new Date(entry.date);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const workoutName = entry.workout
+            .replace('upper', 'Upper ')
+            .replace('lower', 'Lower ')
+            .replace('A', 'A')
+            .replace('B', 'B');
+        
+        return `
+            <div class="history-item">
+                <span class="history-item-date">${dateStr}</span>
+                <span class="history-item-workout">${workoutName}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// History Modal Controls
+const showHistoryModal = document.getElementById('showHistoryModal');
+const historyModal = document.getElementById('historyModal');
+const closeHistoryModal = document.getElementById('closeHistoryModal');
+
+showHistoryModal.addEventListener('click', function() {
+    renderHistory();
+    historyModal.classList.add('active');
+});
+
+closeHistoryModal.addEventListener('click', function() {
+    historyModal.classList.remove('active');
+});
+
+// Close history modal when clicking outside
+historyModal.addEventListener('click', function(event) {
+    if (event.target === historyModal) {
+        historyModal.classList.remove('active');
+    }
+});
+
+// Load history on page load
+loadWorkoutHistory();
