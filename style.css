@@ -692,8 +692,8 @@ input::placeholder {
         /* No padding needed - full width now */
         padding-right: 0;
         margin-bottom: var(--spacing-md);
-        /* Add EXTRA top margin to clear the buttons (they're 10px from top + their height) */
-        margin-top: 50px;
+        /* Add top margin to clear the buttons (they're 10px from top + their height ~30px) */
+        margin-top: 40px;
         /* Prevent text from being cut off */
         word-wrap: break-word;
         overflow-wrap: break-word;
