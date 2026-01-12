@@ -91,9 +91,18 @@
                     <p>📅 <strong>This Month:</strong> <span id="monthCount">0 workouts</span></p>
                 </div>
                 
-                <h3 class="history-heading">Recent Activity</h3>
-                <div id="historyList" class="history-list">
-                    <p class="empty-state">No workouts completed yet.</p>
+                <h3 class="history-heading">Workout Calendar</h3>
+
+                <!-- Calendar Navigation -->
+                <div class="calendar-controls">
+                    <button id="prevMonth" class="btn-calendar-nav">◄</button>
+                    <h3 id="currentMonth" class="calendar-month-title">December 2025</h3>
+                    <button id="nextMonth" class="btn-calendar-nav">►</button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div id="calendarGrid" class="calendar-grid">
+                    <!-- Calendar will be generated here -->
                 </div>
                 
                 <button id="closeHistoryModal" class="btn-cancel">Close</button>

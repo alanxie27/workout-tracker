@@ -813,41 +813,45 @@ function addToHistory(workoutDay) {
     saveWorkoutHistory();
 }
 
-// Calculate streak (consecutive weeks with all 4 workouts)
 function calculateStreak() {
     if (workoutHistory.length === 0) return 0;
-    
+
     let streak = 0;
-    let checkDate = new Date();
-    
-    // Start from current week and go backwards
+    const today = new Date();
+
+    // Start from LAST week (not current week) - the most recent COMPLETED week
+    let checkDate = new Date(today);
+    checkDate.setDate(checkDate.getDate() - 7);
+
+    // Go backwards through completed weeks only
     for (let weekOffset = 0; weekOffset < 52; weekOffset++) {
         const weekStart = getMondayOfWeek(checkDate);
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 7);
-        
+
         // Get all workouts in this week
         const workoutsThisWeek = workoutHistory.filter(entry => {
             const entryDate = new Date(entry.date);
             return entryDate >= weekStart && entryDate < weekEnd;
         });
-        
+
         // Check if all 4 workout types were completed
         const workoutTypes = new Set(workoutsThisWeek.map(w => w.workout));
-        
-        if (workoutTypes.has('upperA') && workoutTypes.has('lowerA') && 
+
+        if (workoutTypes.has('upperA') && workoutTypes.has('lowerA') &&
             workoutTypes.has('upperB') && workoutTypes.has('lowerB')) {
             streak++;
-            // Go back one week
+            // Go back one more week
             checkDate.setDate(checkDate.getDate() - 7);
         } else {
             // Week incomplete - streak ends
             break;
         }
     }
-    
+
     return streak;
 }
+
 // Calculate workouts this month
 function calculateMonthWorkouts() {
     const now = new Date();
@@ -861,44 +865,106 @@ function calculateMonthWorkouts() {
     }).length;
 }
 
-// Render history list
-function renderHistory() {
-    const historyList = document.getElementById('historyList');
+// Calendar state
+let currentCalendarMonth = new Date().getMonth();
+let currentCalendarYear = new Date().getFullYear();
+
+// Render calendar
+function renderCalendar() {
+    const calendarGrid = document.getElementById('calendarGrid');
+    const currentMonthTitle = document.getElementById('currentMonth');
     const streakCount = document.getElementById('streakCount');
     const monthCount = document.getElementById('monthCount');
-    
+
     // Update stats
     const streak = calculateStreak();
     const monthWorkouts = calculateMonthWorkouts();
-    
+
     streakCount.textContent = streak + (streak === 1 ? ' week' : ' weeks');
     monthCount.textContent = monthWorkouts + (monthWorkouts === 1 ? ' workout' : ' workouts');
-    
-    // Render history items
-    if (workoutHistory.length === 0) {
-        historyList.innerHTML = '<p class="empty-state">No workouts completed yet.</p>';
-        return;
+
+    // Update month title
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    currentMonthTitle.textContent = monthNames[currentCalendarMonth] + ' ' + currentCalendarYear;
+
+    // Clear calendar
+    calendarGrid.innerHTML = '';
+
+    // Add day headers
+    const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayHeaders.forEach(day => {
+        const header = document.createElement('div');
+        header.className = 'calendar-day-header';
+        header.textContent = day;
+        calendarGrid.appendChild(header);
+    });
+
+    // Get first day of month and total days
+    const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+    const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    // Get days from previous month to fill the grid
+    const prevMonthLastDay = new Date(currentCalendarYear, currentCalendarMonth, 0).getDate();
+
+    // Add previous month's trailing days
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day other-month';
+        dayDiv.textContent = prevMonthLastDay - i;
+        calendarGrid.appendChild(dayDiv);
     }
-    
-    // Show last 20 workouts
-    const recentWorkouts = workoutHistory.slice(0, 20);
-    
-    historyList.innerHTML = recentWorkouts.map(entry => {
-        const date = new Date(entry.date);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const workoutName = entry.workout
-            .replace('upper', 'Upper ')
-            .replace('lower', 'Lower ')
-            .replace('A', 'A')
-            .replace('B', 'B');
-        
-        return `
-            <div class="history-item">
-                <span class="history-item-date">${dateStr}</span>
-                <span class="history-item-workout">${workoutName}</span>
-            </div>
-        `;
-    }).join('');
+
+    // Get today's date for comparison
+    const today = new Date();
+    const todayDate = today.getDate();
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear();
+
+    // Add current month's days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        dayDiv.textContent = day;
+
+        // Check if this is today
+        if (day === todayDate &&
+            currentCalendarMonth === todayMonth &&
+            currentCalendarYear === todayYear) {
+            dayDiv.classList.add('today');
+        }
+
+        // Check if there's a workout on this day
+        const hasWorkout = workoutHistory.some(entry => {
+            const entryDate = new Date(entry.date);
+            return entryDate.getDate() === day &&
+                   entryDate.getMonth() === currentCalendarMonth &&
+                   entryDate.getFullYear() === currentCalendarYear;
+        });
+
+        if (hasWorkout) {
+            dayDiv.classList.add('has-workout');
+        }
+
+        calendarGrid.appendChild(dayDiv);
+    }
+
+    // Add next month's starting days to complete the grid
+    const totalCells = calendarGrid.children.length - 7; // Subtract day headers
+    const remainingCells = 42 - totalCells - 7; // 6 rows × 7 days - current cells - headers
+    for (let day = 1; day <= remainingCells; day++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day other-month';
+        dayDiv.textContent = day;
+        calendarGrid.appendChild(dayDiv);
+    }
+}
+
+// Rename old renderHistory to keep compatibility
+function renderHistory() {
+    renderCalendar();
 }
 
 // History Modal Controls
@@ -924,3 +990,25 @@ historyModal.addEventListener('click', function(event) {
 
 // Load history on page load
 loadWorkoutHistory();
+
+// Calendar navigation buttons
+const prevMonthBtn = document.getElementById('prevMonth');
+const nextMonthBtn = document.getElementById('nextMonth');
+
+prevMonthBtn.addEventListener('click', function() {
+    currentCalendarMonth--;
+    if (currentCalendarMonth < 0) {
+        currentCalendarMonth = 11;
+        currentCalendarYear--;
+    }
+    renderCalendar();
+});
+
+nextMonthBtn.addEventListener('click', function() {
+    currentCalendarMonth++;
+    if (currentCalendarMonth > 11) {
+        currentCalendarMonth = 0;
+        currentCalendarYear++;
+    }
+    renderCalendar();
+});
