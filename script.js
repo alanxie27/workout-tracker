@@ -609,8 +609,15 @@ document.addEventListener('click', function(event) {
  // export data functionality
  exportBtn.addEventListener('click', function() {
 
-    //convert workoutdata to json string
-    const dataStr = JSON.stringify(workoutData, null, 2);
+    // Create complete export with all data
+    const completeData = {
+        workoutData: workoutData,
+        completionData: completionData,
+        workoutHistory: workoutHistory
+    };
+
+    //convert complete data to json string
+    const dataStr = JSON.stringify(completeData, null, 2);
 
     // create a blob (binary large object) from the string
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -639,7 +646,7 @@ importBtn.addEventListener('click', function() {
 // when a file is selected
 importFile.addEventListener('change', function(event) {
     const file = event.target.files[0]; // Get the selected file
-    
+
     if (file) {
         // create a fileReader to read file
         const reader = new FileReader();
@@ -650,11 +657,36 @@ importFile.addEventListener('change', function(event) {
                 // Parse the JSON string into an object
                 const importedData = JSON.parse(e.target.result);
 
-                // Validate that it has the correct structure
-                if (importedData.upperA && importedData.upperB && 
+                // Check if it's the new format (with workoutData, completionData, workoutHistory)
+                if (importedData.workoutData && importedData.completionData && importedData.workoutHistory) {
+                    // New format - import everything
+                    workoutData = importedData.workoutData;
+                    completionData = importedData.completionData;
+                    workoutHistory = importedData.workoutHistory;
+
+                    // Save all to localStorage
+                    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+                    localStorage.setItem('completionData', JSON.stringify(completionData));
+                    localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+
+                    // Update UI
+                    updateTabCheckmarks();
+
+                    // Clear and re-render
+                    workoutSections.forEach(function(section) {
+                        const list = section.querySelector('.exercises-list');
+                        list.innerHTML = '<p class="empty-state">No exercises added yet.</p>';
+                    });
+
+                    renderAllExercises();
+
+                    alert('Data imported successfully with history and streaks!');
+                }
+                // Check if it's the old format (just workout data)
+                else if (importedData.upperA && importedData.upperB &&
                     importedData.lowerA && importedData.lowerB) {
-                    
-                    // Replace current data with imported data
+
+                    // Old format - import just workout data
                     workoutData = importedData;
 
                     // Save to localStorage
