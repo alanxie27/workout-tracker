@@ -1,880 +1,875 @@
-/* ========== GLOBAL RESET ========== */
-/* The * selector targets EVERY element on the page */
+/* ============================================================
+   WORKOUT TRACKER — redesigned skin
+   Flat ink ground, hairline-bordered cards, one brass accent.
+   Dark is the default theme (script.js adds .dark-mode to body);
+   light mode = same components, different token values.
+   ============================================================ */
+
+/* ---------- RESET ---------- */
 * {
-    margin: 0;      /* Remove default spacing outside elements (browsers add this by default) */
-    padding: 0;     /* Remove default spacing inside elements */
-    box-sizing: border-box;  /* Makes width/height include padding + border (easier to calculate sizes!) */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;  /* width/height include padding + border */
 }
 
-/* ========== CSS VARIABLES (Custom Properties) ========== */
-/* :root is the HTML element - variables defined here can be used ANYWHERE */
-/* WHY? Change color once here, updates everywhere! var(--primary-color) */
-:root {
-    --primary-color: #D4AF37;      /* Darker metallic gold - better contrast with white text */
-    --secondary-color: #2196F3;    /* Blue - for info/secondary actions */
-    --danger-color: #f44336;       /* Red - for delete/warning buttons */
-    --dark-bg: #1a1a1a;            /* Almost black background */
-    --light-bg: #f5f5f5;           /* Light gray background */
-    --text-dark: #333333;          /* Dark gray text (easier on eyes than pure black) */
-    --text-light: #ffffff;         /* White text */
-    --border-radius: 8px;          /* Rounded corners for all elements */
-    --spacing-sm: 8px;             /* Small spacing */
-    --spacing-md: 16px;            /* Medium spacing */
-    --spacing-lg: 24px;            /* Large spacing */
-    --bg-card: #ffffff;            /* Card background for light mode */
-}
-
-
-/* ========== PAGE-LEVEL SETTINGS ========== */
-/* html element - sets behavior for entire page */
-html {
-    scroll-behavior: smooth;  /* When clicking links, smoothly scroll instead of jumping */
-}
-
-/* @keyframes defines the animation steps (like a movie: from → to) */
-@keyframes fadeIn {
-    from {  /* Starting state (when element first appears) */
-        opacity: 0;                /* Invisible */
-        transform: translateY(20px);  /* 20px below final position */
-    }
-    to {  /* Ending state (after 0.5 seconds) */
-        opacity: 1;                /* Fully visible */
-        transform: translateY(0);   /* At final position */
-    }
-}
-
-/* ========== BODY (entire visible page) ========== */
+/* ---------- DESIGN TOKENS ----------
+   Every color in the app comes from these variables.
+   body holds the LIGHT values; body.dark-mode overrides them.
+   Change a token once, the whole app follows. */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(90deg, #191970 0%, #000000 100%);
+    --bg: #f6f6f3;           /* page ground (warm off-white) */
+    --card: #ffffff;         /* card surface */
+    --card-2: #f0f0ec;       /* inset surface (stat grid, tiles) */
+    --line: #e3e3dd;         /* hairline borders */
+    --text: #1c1c1f;         /* primary text */
+    --muted: #71717a;        /* secondary text, idle icons */
+    --brass: #a87f1c;        /* THE accent - deeper gold for light bg */
+    --brass-ink: #ffffff;    /* text placed on brass */
+    --brass-soft: rgba(168, 127, 28, 0.12);  /* brass tint for focus rings */
+    --moss: #2e9d6e;         /* done / success */
+    --ember: #d24936;        /* destructive only */
+    --radius: 14px;
+
+    /* tip markup colors (*red*...*red* etc.) - darker tones so they
+       stay legible on the light ground */
+    --c-red: #c2402e;
+    --c-blue: #2f6fba;
+    --c-yellow: #96700a;
+    --c-orange: #bd6212;
+
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
     min-height: 100vh;
-    padding: var(--spacing-md);
-
-    /* Light mode theme variables */
-    --bg-primary: #f5f5f5;
-    --bg-secondary: rgba(255, 255, 255, 0.95);
-    --text-primary: #333333;
-    --text-secondary: #666666;
-    --border-color: #ddd;
-    --theme-btn-color: rgb(44, 44, 44);  /* Light button for light mode */
-
-    color: var(--text-primary);  /* Use variable instead of hardcoded */
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Dark mode theme */
 body.dark-mode {
-    /* Dark mode theme variables */
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #1a1a1a;        /* Darker sections */
-    --bg-card: #2d2d2d;             /* Lighter cards that stand out */
-    --text-primary: #e0e0e0;
-    --text-secondary: #b0b0b0;
-    --border-color: #404040;
-    --theme-btn-color: #333333;     /* Dark button for dark mode */
+    --bg: #0c0c0e;           /* ink ground */
+    --card: #17171a;         /* graphite cards */
+    --card-2: #1e1e22;
+    --line: #27272d;
+    --text: #f4f4f2;
+    --muted: #8e8e98;
+    --brass: #d4a72c;        /* brighter brass holds contrast on ink */
+    --brass-ink: #141003;    /* near-black text on brass (not white!) */
+    --brass-soft: rgba(212, 167, 44, 0.16);
+    --moss: #58b98a;
+    --ember: #e0604e;
 
-    color: var(--text-primary);
+    /* brighter markup tones for the dark ground */
+    --c-red: #e0604e;
+    --c-blue: #6aa9e9;
+    --c-yellow: #d9b64a;
+    --c-orange: #e08a3c;
 }
 
-/* ========== HEADER (top section with title) ========== */
-header {
-    /* rgba = red, green, blue, alpha (transparency); 0.95 = 95% opaque (slightly see-through) */
-    background-color: var(--bg-secondary);
+/* tip color markup spans (generated by parseColorText in script.js) */
+.c-red { color: var(--c-red); }
+.c-blue { color: var(--c-blue); }
+.c-yellow { color: var(--c-yellow); }
+.c-orange { color: var(--c-orange); }
 
-    padding: var(--spacing-lg);  /* Space inside the header (24px all around) */
-    border-radius: var(--border-radius);  /* Rounded corners (8px) */
-
-    /* box-shadow: horizontal vertical blur color */
-    /* Creates subtle shadow below header for depth */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-    /* FLEXBOX: arranges child elements in a row */
-    display: flex;
-    justify-content: space-between;  /* Pushes items to opposite ends (h1 left, buttons right) */
-    align-items: center;  /* Vertically centers items */
-
-    margin-bottom: var(--spacing-lg);  /* Space below header before next element */
+/* numbers everywhere read as data: monospace + tabular figures */
+.num,
+.stat .v,
+.stat-tile .v,
+.calendar-day,
+.streak-chip {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Targets ONLY h1 that's INSIDE header */
-header h1 {
-    color: var(--text-primary);
-    font-size: 2rem;  /* rem = relative to root font size; 2rem = 2x base size (usually 32px) */
-    margin: 0;  /* Remove default margin */
-}
-
-/* ========== BUTTONS ========== */
-/* Applies to ALL <button> elements */
+/* ---------- BASE ELEMENTS ---------- */
 button {
-    padding: 12px 24px;  /* Space inside: 12px top/bottom, 24px left/right */
-    border: none;  /* Remove default ugly button border */
-    border-radius: var(--border-radius);  /* Rounded corners */
-    font-size: 1rem;  /* Base font size (usually 16px) */
-    font-weight: 600;  /* Semi-bold text (400 = normal, 700 = bold) */
-    cursor: pointer;  /* Shows hand icon when hovering (indicates clickable) */
-
-    /* transition: smoothly animates changes (color, size, etc.) over 0.3 seconds */
-    transition: all 0.3s ease;
-}
-
-/* Class selector: targets elements with class="btn-primary" */
-.btn-primary {
-    background-color: var(--primary-color);  /* Gold background */
-    color: var(--text-light);  /* White text */
-}
-
-/* :hover = when mouse is over the button */
-.btn-primary:hover {
-    background-color: #B8941E;  /* Even darker gold on hover (creates depth effect) */
-}
-
-.btn-theme {
-    background-color: var(--theme-btn-color);  /* Inverse color - light in light mode, dark in dark mode */
-    border: 2px solid var(--theme-btn-color);
-    color: var(--text-primary);  /* Text stays readable */
-    padding: 8px 16px;
-    font-size: 1.5rem;
-    margin-left: auto;
-}
-
-.btn-theme:hover {
-    opacity: 0.8;  /* Slightly transparent on hover for feedback */
-}
-
-.btn-complete-workout {
-    width: 100%;
-    margin-top: var(--spacing-lg);
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    padding: 16px;
-    font-size: 1.1rem;
-    font-weight: 700;
-}
-
-.btn-complete-workout:hover {
-    background-color: #B8941E;
-}
-
-.btn-edit {
-    background-color: var(--secondary-color);
-    color: var(--text-light);
-    /* manually adjust position to top right*/
-    position: absolute;
-    top: var(--spacing-md);
-    right: 120px;
-    padding: 8px 16px;
-}
-
-.btn-edit:hover {
-    background-color: #1976d2
-}
-
-.btn-delete {
-    background-color: var(--danger-color);
-    color: var(--text-light);
-    position: absolute;
-    top: var(--spacing-md);
-    right: var(--spacing-md);
-    padding: 8px 16px;
-}
-
-.btn-delete:hover {
-    background-color: #d32f2f;
-}
-
-.btn-quick-edit {
-    background-color: #551A8B;
-    color: var(--text-light);
-    position: absolute;
-    top: var(--spacing-md);  /* Same as Delete */
-    right: 205px;  /* Adjust to match spacing between Edit and Delete */
-    padding: 4px 16px;  /* Same as Edit and Delete */
-    font-size: 1rem;  /* Same as other buttons */
-}
-
-.btn-quick-edit:hover {
-    background-color: #4B0082;
-}
-
-.btn-float {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    font-size: 2rem;
+    font: inherit;
+    color: inherit;
+    background: none;
     border: none;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    transition: all 0.3s ease;
+}
 
-    /* fix centering */
+button:focus-visible,
+.sheet-input:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+}
+
+/* hides an element visually but keeps it for screen readers */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ---------- HEADER ---------- */
+header {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 20px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.kicker {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.streak-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.streak-chip svg { color: var(--brass); }
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--muted);
     display: flex;
     align-items: center;
     justify-content: center;
-
-    /* override global button padding/baseline */
-    padding: 0;
-    line-height: 1;
 }
 
-.btn-float:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+/* ---------- MAIN ---------- */
+main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 16px 110px;  /* bottom space clears the floating buttons */
+}
+
+/* ---------- TABS ---------- */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    margin: 8px 0 16px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 9px 2px 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;      /* underline sits on top of the hairline */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.tab-btn.active {
+    color: var(--text);
+    border-bottom-color: var(--brass);
+}
+
+/* finished days get a small moss check after the label */
+.tab-btn.completed::after {
+    content: "✓";
+    color: var(--moss);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* 2-day split: the off-cycle pair shrinks and dims, but stays tappable */
+.tab-btn.off-cycle {
+    flex: 0.55;
+    opacity: 0.45;
+    font-size: 11px;
+}
+
+/* ---------- WORKOUT SECTIONS (show/hide by tab) ---------- */
+.workout-day { display: none; }
+.workout-day.active {
+    display: block;
+    animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .workout-day.active { animation: none; }
+}
+
+/* ---------- EXERCISE LIST + CARDS ---------- */
+.exercises-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 28px 16px;
+    font-size: 13px;
+}
+
+.exercise-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.exercise-card.done { opacity: 0.62; }
+
+/* brass label above the topmost unchecked exercise */
+.card-upnext {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--brass);
+    padding: 10px 14px 0;
+}
+
+/* --- card header row: chevron / check / name / synced chip --- */
+.card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+}
+
+.btn-collapse {
+    width: 28px;
+    height: 28px;
+    margin: -5px;             /* bigger touch target without extra layout */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+.btn-collapse svg { transition: transform 0.18s ease; }
+.exercise-card.collapsed .btn-collapse svg { transform: rotate(-90deg); }
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-collapse svg { transition: none; }
+}
+
+/* circular done checkbox */
+.check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;       /* check mark hidden until done */
+    padding: 0;
+}
+
+.exercise-card.next-up .check { border-color: var(--brass); }
+
+.exercise-card.done .check {
+    background: var(--moss);
+    border-color: var(--moss);
+    color: var(--bg);         /* check mark contrasts with the moss fill */
+}
+
+.exercise-name {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+.exercise-card.done .exercise-name {
+    color: var(--muted);
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+/* chip shown when a same-named exercise exists in the paired day */
+.duplicate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2.5px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* collapsed cards show only the header row */
+.exercise-card.collapsed .card-body { display: none; }
+
+/* ---------- ALTERNATIVE GROUPS ----------
+   Same-day backup exercises (linked via the edit sheet) render as one
+   bordered unit separated by an "or" divider. Checking any member
+   checks the whole group. */
+.alt-group {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+/* cards inside a group drop their own border - the group carries it */
+.alt-group .exercise-card {
+    border: none;
+    border-radius: 0;
+}
+
+.alt-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--brass);
+    background: var(--card);
+}
+
+/* hairlines either side of the "or" */
+.alt-divider::before,
+.alt-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+/* --- stat grid: the four headline numbers --- */
+/* 1px gap over a line-colored background = clean hairlines even when
+   long free-text values force the grid to wrap to two rows */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.stat {
+    background: var(--card-2);
+    padding: 10px 6px 11px;
+    text-align: center;
+    min-width: 0;
+}
+
+.stat .l {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.stat .v {
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-top: 2px;
+    overflow-wrap: break-word;
+}
+
+/* faded note under a stat value ("got 7-6-6" when max wasn't hit) */
+.stat .stat-note {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.85;
+    margin-top: 2px;
+    overflow-wrap: break-word;
+}
+
+/* --- meta rows: prose fields below the numbers --- */
+.card-meta {
+    padding: 11px 14px 2px;
+    display: grid;
+    gap: 7px;
+}
+
+.card-meta .m {
+    display: flex;
+    gap: 8px;
+    font-size: 12.5px;
+}
+
+.card-meta .k {
+    color: var(--muted);
+    width: 88px;
+    flex-shrink: 0;
+}
+
+.card-meta .val {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+.card-meta .val.failure {
+    color: var(--brass);
+    font-weight: 600;
+}
+
+/* --- action row: quiet icons instead of colored pills --- */
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px 10px;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+}
+
+.icon-btn:active { background: var(--card-2); }
+
+/* quick log (bolt) is the highlighted action */
+.icon-btn.log {
+    color: var(--brass);
+    background: var(--brass-soft);
+}
+
+/* delete sits apart, in ember */
+.icon-btn.danger {
+    color: var(--ember);
+    margin-left: auto;
+}
+
+/* ---------- COMPLETE WORKOUT BUTTON ---------- */
+.btn-complete-workout {
+    margin-top: 14px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--brass);
+    color: var(--brass-ink);
+    border-radius: 13px;
+    padding: 14px;
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.btn-complete-workout:active { opacity: 0.85; }
+
+/* ---------- FLOATING BUTTONS ---------- */
+.btn-float {
+    position: fixed;
+    bottom: 22px;
+    right: 18px;
+    width: 54px;
+    height: 54px;
+    border-radius: 17px;
+    background: var(--brass);
+    color: var(--brass-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.45);
+    z-index: 900;
 }
 
 .btn-float-history {
-    left: 30px;  /* Position in bottom left instead of right */
-    right: auto;  /* Override right positioning */
+    left: 18px;
+    right: auto;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    box-shadow: none;
 }
 
-.stats-summary {
-    background-color: var(--bg-card);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-md);
-    border: 2px solid var(--border-color);
+/* ---------- MODALS AS BOTTOM SHEETS ---------- */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2000;
+    align-items: flex-end;      /* sheet slides up from the bottom */
+    justify-content: center;
 }
 
-.stats-summary p {
-    margin-bottom: var(--spacing-sm);
-    font-size: 1.1rem;
+.modal.active { display: flex; }
+
+.sheet {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    width: 100%;
+    max-width: 560px;
+    max-height: 88vh;
+    overflow-y: auto;
+    /* env() keeps content above the iPhone home indicator */
+    padding: 10px 18px calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
-.stats-summary p:last-child {
-    margin-bottom: 0;
+.sheet-grab {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+    margin: 2px auto 14px;
 }
 
-/* Calendar Styles */
-.calendar-controls {
+.sheet h2 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 14px;
+}
+
+/* --- form fields --- */
+.field { margin-bottom: 12px; }
+
+.f-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 5px;
+}
+
+/* lowercase explanatory hint inside a field label */
+.f-hint {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+}
+
+.sheet-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 10px 12px;
+    /* 16px stops iOS Safari from zooming in when a field is focused */
+    font-size: 16px;
+    font-family: inherit;
+}
+
+.sheet-input:focus {
+    outline: none;
+    border-color: var(--brass);
+    box-shadow: 0 0 0 3px var(--brass-soft);
+}
+
+.sheet-input.num { text-align: center; }
+
+.sheet-input::placeholder { color: var(--muted); }
+
+textarea.sheet-input {
+    resize: vertical;
+    min-height: 64px;
+}
+
+select.sheet-input { cursor: pointer; }
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.grid4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+/* long free-text values ("1.15 minutes") need room on small phones */
+@media (max-width: 420px) {
+    .grid4 { grid-template-columns: 1fr 1fr; }
+}
+
+.sheet-btns {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-    gap: var(--spacing-sm);
+    gap: 10px;
+    margin-top: 16px;
 }
 
-.calendar-month-title {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    margin: 0;
+.btn-ghost {
     flex: 1;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-weight: 600;
     text-align: center;
 }
 
-.btn-calendar-nav {
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    padding: 8px 16px;
-    border-radius: var(--border-radius);
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
+.btn-solid {
+    flex: 2;
+    padding: 12px;
+    background: var(--brass);
+    color: var(--brass-ink);
+    border-radius: 12px;
+    font-weight: 700;
+    text-align: center;
 }
 
-.btn-calendar-nav:hover {
-    background-color: #B8941E;
+.btn-solid:active,
+.btn-ghost:active { opacity: 0.8; }
+
+/* ---------- HISTORY SHEET ---------- */
+.stat-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.stat-tile {
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 12px 14px;
+}
+
+.stat-tile .l {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-tile .l svg { color: var(--brass); }
+
+.stat-tile .v {
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 4px;
+    letter-spacing: -0.02em;
+}
+
+/* --- calendar --- */
+.calendar-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 14px 0 10px;
+}
+
+.calendar-month-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.btn-calendar-nav {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--card-2);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-bottom: var(--spacing-md);
+    gap: 4px;
 }
 
 .calendar-day-header {
     text-align: center;
+    font-size: 10px;
     font-weight: 600;
-    color: var(--text-secondary);
-    padding: 8px;
-    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 0 6px;
 }
 
 .calendar-day {
     aspect-ratio: 1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: var(--bg-card);
-    border-radius: var(--border-radius);
-    padding: 4px;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-    position: relative;
-    border: 2px solid transparent;
+    font-size: 12px;
+    border-radius: 10px;
 }
 
 .calendar-day.other-month {
-    opacity: 0.3;
+    color: var(--muted);
+    opacity: 0.45;
 }
 
 .calendar-day.today {
-    border-color: var(--primary-color);
-    font-weight: bold;
+    box-shadow: inset 0 0 0 1.5px var(--brass);
+    font-weight: 700;
 }
 
 .calendar-day.has-workout {
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    font-weight: 600;
+    background: var(--brass);
+    color: var(--brass-ink);
+    font-weight: 700;
 }
 
-.workout-dot {
-    width: 6px;
-    height: 6px;
-    background-color: var(--primary-color);
-    border-radius: 50%;
-    margin-top: 2px;
-}
+/* --- weekly split toggle --- */
+.split-field { margin-top: 16px; }
 
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal.active {
+.seg {
     display: flex;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
 }
 
-.modal-content {
-    background-color: var(--bg-secondary);
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius);
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-.modal-content h2 {
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-md);
-}
-
- .history-heading {
-      padding-bottom: var(--spacing-md);
-  }
-
-/* ========== MAIN CONTENT AREA ========== */
-main {
-    max-width: 800px;  /* Content never gets wider than 800px (readable width) */
-    margin: 0 auto;  /* 0 = no top/bottom margin; auto = center horizontally (equal left/right margins) */
-}
-
-/* ========== SECTIONS (content blocks) ========== */
-section {
-    background-color: var(--bg-secondary);  /* White with slight transparency */
-    padding: var(--spacing-lg);  /* Space inside section (24px) */
-    border-radius: var(--border-radius);  /* Rounded corners */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
-    margin-bottom: var(--spacing-lg);  /* Space between sections */
-    animation: fadeIn 0.5s ease-in;  /* Play "fadeIn" animation over 0.5 seconds */
-}
-
-/* h2 headings INSIDE sections */
-section h2 {
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-md);  /* Space between heading and content below it */
-    font-size: 1.5rem;  /* 1.5x base size (usually 24px) */
-}
-
-.tabs {
-    display: flex;  /* Arrange tab buttons in a row */
-    gap: var(--spacing-sm);  /* Space between tab buttons */
-    margin-bottom: var(--spacing-md);  /* Space below tabs */
-}
-
-.tab-btn {
-    flex: 1;  /* Each tab button takes equal space */
-    padding: var(--spacing-md);  /* Space inside tab buttons */
-    background-color: var(--bg-card);  /* Use theme background */
-    color: var(--text-primary);  /* Use theme text color */
-    border: none;  /* No border */
-    border-radius: var(--border-radius);  /* Rounded corners */
-    cursor: pointer;  /* Pointer cursor on hover */
-    transition: background-color 0.3s ease;  /* Smooth background color change */
-    font-weight: 600;  /* Semi-bold text */
-}
-
-.tab-btn.active {
-    background-color: var(--primary-color);  /* Gold background when active */
-    color: var(--text-light);  /* White text */
-
-    /* BOLD TEXT: font-weight values: 400=normal, 600=semi-bold, 700=bold */
-    font-weight: 700;  /* Make text bold */
-
-    /* BOTTOM BORDER: border-bottom affects only the bottom edge */
-    /* Format: width style color */
-    border-bottom: 3px solid var(--text-light);  /* 3px thick solid white line at bottom */
-}
-
-/* Completed tab styling */
-.tab-btn.completed {
-    opacity: 0.5;
-    position: relative;
-}
-
-.tab-btn.completed::after {
-    content: " ✓";
-    color: #4CAF50;
-}
-
-.exercise-card {
-    background-color: var(--bg-card);  /* Use card background for better contrast */
-    padding: var(--spacing-lg);  /* Space inside card */
-    border-radius: var(--border-radius);  /* Rounded corners */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
-    margin-bottom: var(--spacing-lg);  /* Space between cards */
-    position: relative;
-}
-
-.exercise-card h3 {
-    margin-bottom: var(--spacing-md);
-    font-size: 1.5rem;
-}
-
-/* Add spacing between each field line */
-.exercise-card p {
-    margin-bottom: 10px;  /* 16px space between each field */
-}
-
-/* Inline field spacing (for Sets | Reps | Rest line) */
-.exercise-card p strong {
-    margin-left: 20px;  /* Space before each label */
-    margin-right: 4px;  /* Space after each label (between label and value) */
-}
-
-.exercise-card p strong:first-child {
-    margin-left: 0;  /* No space before first label */
-}
-
-/* ========== EDIT MODE STYLING ==========
-   These styles appear when user clicks "Edit" button on an exercise card
-   The card transforms from view mode to edit mode with input fields */
-
-/* LABEL ELEMENTS: Text above input fields (like "Machine Position:", "Sets:", etc.) */
-.exercise-card label {
-    /* DISPLAY BLOCK: Makes label take full width and start on new line
-       Default for <label> is inline (sits next to other elements)
-       Block = stacks vertically, one per line */
-    display: block;
-
-    /* SPACING: Controls space above and below each label */
-    margin-top: var(--spacing-md);  /* 16px space above label (creates gap from previous field) */
-    margin-bottom: var(--spacing-sm);  /* 8px space below label (small gap before input) */
-
-    /* FONT WEIGHT: Makes label text semi-bold so it stands out from input text
-       Values: 400=normal, 600=semi-bold, 700=bold */
-    font-weight: 600;  /* Semi-bold text */
-
-    /* COLOR: Dark gray text for readability */
-    color: var(--text-primary);  /* #333 dark gray */
-}
-
-/* FIRST LABEL OVERRIDE: The very first label in edit mode
-   :first-of-type = pseudo-class that targets the first <label> element
-   Why? The first label needs different spacing since nothing is above it */
-.exercise-card label:first-of-type {
-    margin-top: var(--spacing-md);  /* Keep consistent top spacing for first label */
-}
-
-.edit-input[data-field="name"] {
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
-/* INPUT AND TEXTAREA FIELDS: All editable text fields when in edit mode */
-.edit-input {
-    /* WIDTH 100%: Input stretches to fill entire card width
-       Makes form look clean and organized */
-    width: 100%;
-
-    /* PADDING: Space inside the input field
-       Makes text not squished against edges, easier to read/type */
-    padding: 10px;  /* 10px of breathing room on all sides */
-
-    /* BORDER: Outline around input field
-       Format: width style color */
-    border: 2px solid var(--border-color);  /* Use theme border color */
-
-    /* BORDER RADIUS: Rounded corners (matches card style) */
-    border-radius: var(--border-radius);  /* 8px rounded corners */
-
-    /* FONT SIZE: Text size inside input
-       1rem = 16px (browser default size) */
-    font-size: 1rem;
-
-    /* BACKGROUND AND TEXT: Use theme colors for dark mode support */
-    background-color: var(--bg-card);  /* Same as other input fields */
-    color: var(--text-primary);  /* Visible text color */
-
-    /* MARGIN BOTTOM: Space below each input before next label */
-    margin-bottom: var(--spacing-sm);  /* 8px gap */
-}
-
-/* INPUT FOCUS STATE: How input looks when user clicks into it
-   :focus = pseudo-class that activates when element is clicked/selected
-   Why? Gives visual feedback showing which field user is typing in */
-.edit-input:focus {
-    /* OUTLINE NONE: Removes default blue outline browsers add
-       We're replacing it with our own custom border color */
-    outline: none;
-
-    /* BORDER COLOR CHANGE: Changes border to gold when active
-       This highlights which field you're currently editing */
-    border-color: var(--primary-color);  /* Gold border (#D4AF37) */
-}
-
-/* TEXTAREA SPECIFIC: Only affects <textarea> elements with edit-input class
-   Why separate? Textareas have special properties that regular inputs don't */
-textarea.edit-input {
-    /* RESIZE VERTICAL: Allows user to drag bottom edge to make taller
-       Values: none (can't resize), horizontal, vertical, both
-       vertical = can only resize up/down (not left/right) */
-    resize: vertical;  /* User can make taller if needed */
-
-    /* FONT FAMILY INHERIT: Uses same font as parent element
-       Why? Textareas often default to monospace font (looks like code)
-       inherit = copy font from parent, keeps styling consistent */
-    font-family: inherit;  /* Match rest of page font */
-}
-
-/* SELECT DROPDOWNS: Style dropdown menus to match theme */
-select.edit-input {
-    /* Ensure dropdowns match the input styling */
-    cursor: pointer;  /* Show pointer cursor on hover */
-}
-
-/* SAVE AND CANCEL BUTTONS: Shared styles for both action buttons
-   Using comma (,) applies same rules to multiple selectors */
-.btn-save,
-.btn-cancel {
-    /* MARGIN TOP: Space above buttons (separates from input fields above) */
-    margin-top: var(--spacing-md);  /* 16px gap above buttons */
-
-    /* MARGIN RIGHT: Space between Save and Cancel buttons
-       Only affects left button (Save) since it's on the left */
-    margin-right: var(--spacing-sm);  /* 8px gap between buttons */
-}
-
-/* SAVE BUTTON: Primary action button (confirms edits) */
-.btn-save {
-    /* BACKGROUND: Gold color matches app theme
-       Primary action gets primary color */
-    background-color: var(--primary-color);  /* Metallic gold (#D4AF37) */
-
-    /* TEXT COLOR: White text on gold background */
-    color: var(--text-light);  /* White (#fff) */
-}
-
-/* SAVE BUTTON HOVER: Changes color when mouse hovers over it
-   :hover = pseudo-class that activates when mouse is over element
-   Gives feedback that button is clickable */
-.btn-save:hover {
-    /* Darker green on hover (provides visual feedback) */
-    background-color: #B8941E;  /* Darker gold shade */
-}
-
-/* CANCEL BUTTON: Secondary action button (discards edits) */
-.btn-cancel {
-    /* BACKGROUND: Gray color indicates less important action
-       Gray = neutral, doesn't encourage clicking like gold does */
-    background-color: #999;  /* Medium gray */
-
-    /* TEXT COLOR: White text on gray background */
-    color: var(--text-light);  /* White (#fff) */
-}
-
-/* CANCEL BUTTON HOVER: Darker gray on hover */
-.btn-cancel:hover {
-    /* Darker gray provides hover feedback */
-    background-color: #777;  /* Darker gray shade */
-}
-
-
-/* ========== WORKOUT DAY SECTIONS (show/hide based on active tab) ========== */
-/* Hide ALL workout-day sections by default */
-.workout-day {
-    display: none;  /* none = completely hidden (not taking up space) */
-}
-
-/* Show ONLY sections that have BOTH workout-day AND active classes */
-.workout-day.active {
-    display: block;  /* block = visible, takes full width, stacks vertically */
-}
-
-/* ========== INPUT FIELDS ========== */
-/* Attribute selector: targets inputs with type="text" OR type="number" */
-/* The comma (,) means "OR" - applies to both types */
-input[type="text"],
-input[type="number"] {
-    width: 100%;  /* Takes full width of parent container */
-    padding: 12px 16px;  /* Space inside input field */
-    border: 2px solid var(--border-color);
-    background-color: var(--bg-card);  /* Use card background for better visibility */
-    color: var(--text-primary);  /* Ensure text is visible */
-    border-radius: var(--border-radius);  /* Rounded corners */
-    font-size: 1rem;
-    margin-bottom: var(--spacing-md);  /* Space below input */
-    transition: border-color 0.3s ease;  /* Smoothly change border color when focused */
-}
-
-/* :focus = when user clicks into the input field */
-input[type="text"]:focus,
-input[type="number"]:focus {
-    outline: none;  /* Remove default blue outline (we add custom styling instead) */
-    border-color: var(--primary-color);  /* Change border to gold when focused */
-    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);  /* Subtle gold glow around input */
-}
-
-/* ::placeholder = the gray hint text inside empty inputs */
-input::placeholder {
-    color: #999;  /* Gray color for placeholder text */
-}
-
-/* ========== RESPONSIVE DESIGN (for mobile) ========== */
-/* @media = "only apply these styles when condition is true" */
-/* max-width: 768px = screen width is 768px or SMALLER (tablets and phones) */
-@media (max-width: 768px) {
-    body {
-        padding: var(--spacing-md);
-    }
-
-    header {
-        flex-direction: row;  /* Keep horizontal on mobile */
-        padding: var(--spacing-md);
-    }
-
-    header h1 {
-        font-size: 1.2rem;  /* Smaller title */
-    }
-
-    /* Tabs: smaller and scrollable if needed */
-    .tabs {
-        gap: 6px;
-        overflow-x: auto;  /* Allow horizontal scroll if tabs don't fit */
-    }
-
-    .tab-btn {
-        padding: 10px 12px;  /* Smaller padding */
-        font-size: 0.9rem;  /* Smaller text */
-        white-space: nowrap;  /* Prevent text wrapping */
-    }
-
-    /* Exercise cards: reduce padding and font sizes */
-    .exercise-card {
-        padding: var(--spacing-md);
-        /* Add extra padding at bottom for arrow buttons */
-        padding-bottom: 60px;
-        /* Use flexbox to reorder elements on mobile */
-        display: flex;
-        flex-direction: column;
-    }
-
-    .exercise-card h3 {
-        font-size: 1.2rem;
-        /* Title goes below buttons on mobile */
-        order: 1;
-        /* No padding needed - full width now */
-        padding-right: 0;
-        margin-bottom: var(--spacing-md);
-        /* Add top margin to clear the buttons (they're 10px from top + their height ~30px) */
-        margin-top: 40px;
-        /* Prevent text from being cut off */
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-    }
-
-    .exercise-card p {
-        font-size: 0.9rem;
-        margin-bottom: 8px;
-        /* Content goes after title */
-        order: 2;
-        /* Ensure text wraps properly and doesn't overflow */
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-    }
-
-    /* Top-right buttons: make smaller and reposition */
-    .btn-quick-edit {
-        /* Buttons stay at top */
-        order: 0;
-        right: 135px;
-        padding: 6px 10px;
-        font-size: 0.85rem;
-        top: 10px;
-    }
-
-    .btn-edit {
-        order: 0;
-        right: 80px;
-        padding: 6px 10px;
-        font-size: 0.85rem;
-        top: 10px;
-    }
-
-    .btn-delete {
-        order: 0;
-        right: 10px;
-        padding: 6px 10px;
-        font-size: 0.85rem;
-        top: 10px;
-    }
-
-    /* Bottom arrow buttons: position them lower to avoid overlapping text */
-    .btn-arrow {
-        padding: 6px 10px;
-        font-size: 1rem;
-        bottom: 10px;
-    }
-
-    .btn-up {
-        right: 60px;
-    }
-
-    .btn-down {
-        right: 10px;
-    }
-
-    /* Floating add button: smaller */
-    .btn-float {
-        width: 50px;
-        height: 50px;
-        bottom: 20px;
-        right: 20px;
-        font-size: 1.5rem;
-    }
-
-    /* Modal: full screen on mobile */
-    .modal-content {
-        width: 95%;
-        max-width: none;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    /* Calendar: make it responsive on mobile */
-    .calendar-grid {
-        gap: 4px;  /* Reduce gap on mobile */
-    }
-
-    .calendar-day {
-        font-size: 0.75rem;  /* Smaller font */
-        padding: 2px;
-    }
-
-    .calendar-day-header {
-        font-size: 0.7rem;
-        padding: 4px 2px;
-    }
-
-    .calendar-month-title {
-        font-size: 1rem;
-    }
-
-    .btn-calendar-nav {
-        padding: 6px 12px;
-        font-size: 1rem;
-    }
-
-    /* Section spacing */
-    section {
-        padding: var(--spacing-md);
-        margin-bottom: var(--spacing-md);
-    }
-
-    section h2 {
-        font-size: 1.2rem;
-    }
-
-    /* Buttons: don't make full width */
-    .btn-primary,
-    .btn-secondary,
-    .btn-cancel,
-    .btn-save {
-        width: auto;  /* Override the width: 100% */
-    }
-
-    .btn-float-history {
-        left: 20px;
-        bottom: 20px;
-    }
-
-}
-
-/* ========== EXERCISE DISPLAY AREA ========== */
-
-.exercises-list {
-    display: flex;
-    flex-direction: column;  /* Stack items vertically */
-    gap: var(--spacing-md);  /* Space between list items */
-}
-
-/* Class for "No exercises yet" message */
-.empty-state {
-    text-align: center;  /* Center the text */
-    color: #666;  /* Medium gray */
-    padding: var(--spacing-lg);  /* Space around text */
-    font-style: italic;  /* Slanted text */
-}
-
-/* data management section */
-.data-management {
+.seg-btn {
+    flex: 1;
     text-align: center;
+    padding: 8px 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+
+.seg-btn.on {
+    background: var(--card-2);
+    color: var(--text);
+    border-color: var(--line);
+}
+
+.split-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 7px;
+    line-height: 1.5;
+}
+
+/* --- backup actions --- */
+.backup-row {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0 4px;
 }
 
 .btn-secondary {
-    background-color: #757575;
-    color: var(--text-light);
-    margin: var(--spacing-sm);
+    flex: 1;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 13px;
+    background: var(--card-2);
 }
 
-.btn-secondary:hover {
-    background-color: #616161;
+.btn-close-sheet {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-weight: 600;
 }
 
-/* arrow buttons for reordering */
-.btn-arrow {
-    background-color: #9E9E9E;
-    color: var(--text-light);
-    padding: 8px 12px;
-    font-size: 1.2rem;
-    position: absolute;
-    bottom: var(--spacing-md);
+/* ---------- DESKTOP (768px and up) ---------- */
+@media (min-width: 768px) {
+    header { padding-top: 36px; }
+    header h1 { font-size: 28px; }
+
+    /* sheets become centered dialogs instead of bottom sheets */
+    .modal {
+        align-items: center;
+        padding: 24px;
+    }
+
+    .sheet {
+        border-radius: 22px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .sheet-input { font-size: 14px; }  /* no iOS zoom concern on desktop */
+
+    /* hover feedback (touch devices don't hover) */
+    .icon-btn:hover { background: var(--card-2); color: var(--text); }
+    .icon-btn.log:hover { background: var(--brass-soft); color: var(--brass); }
+    .icon-btn.danger:hover { color: var(--ember); }
+    .btn-icon:hover,
+    .btn-calendar-nav:hover,
+    .btn-secondary:hover,
+    .btn-ghost:hover { border-color: var(--muted); }
+    .btn-solid:hover,
+    .btn-complete-workout:hover,
+    .btn-float:hover { filter: brightness(1.06); }
+    .btn-float { transition: transform 0.15s ease; }
+    .btn-float:hover { transform: scale(1.05); }
+    .tab-btn:hover { color: var(--text); }
 }
-
-.btn-up {
-    right: 80px;  /* Position to the left of down arrow */
-}
-
-.btn-down {
-    right: var(--spacing-md);  /* Far right position */
-}
-
-.btn-arrow:hover {
-    background-color: #757575;
-}
-
-.btn-arrow:disabled {
-    background-color: #E0E0E0;
-    color: #9E9E9E;
-    cursor: not-allowed;
-}
-
-
-
-
