@@ -314,6 +314,7 @@ function syncPairedExercise(day, index) {
             exercise.actualReps = source.actualReps;
             exercise.increaseWeightBy = source.increaseWeightBy;
             exercise.goToFailure = source.goToFailure;
+            exercise.cooldown = source.cooldown;
         }
     });
 
@@ -345,6 +346,12 @@ function metaRow(label, value) {
 function failureRow(value) {
     if (!value || value === 'No') return '';
     return '<div class="m"><span class="k">Failure</span><span class="val failure">' + parseGoToFailure(value) + '</span></div>';
+}
+
+// "Cooldown" row - only rendered when the reminder is turned on
+function cooldownRow(value) {
+    if (value !== 'Yes') return '';
+    return '<div class="m"><span class="k">Cooldown</span><span class="val">Reminder when done</span></div>';
 }
 
 // one tile of the 4-column stat grid; `note` is an optional user-entered
@@ -394,6 +401,7 @@ function createExerciseCard(day, exercise, index, isUpNext, pairedDay) {
         metaRow('Target reps', exercise.reps) +
         metaRow('Increase by', exercise.increaseWeightBy) +
         failureRow(exercise.goToFailure) +
+        cooldownRow(exercise.cooldown) +
         metaRow('Tips', exercise.tips);
 
     exerciseCard.innerHTML = `
@@ -581,6 +589,7 @@ addExerciseBtn.addEventListener('click', function() {
         actualReps: '',
         increaseWeightBy: '',
         goToFailure: 'No',
+        cooldown: 'No',
         done: false,
         collapsed: false,
         altGroup: null
@@ -641,6 +650,11 @@ document.addEventListener('click', function(event) {
 
         localStorage.setItem('workoutData', JSON.stringify(workoutData));
         rerenderAllExercises();
+
+        // this exercise wants a cooldown - remind on the way to the next one
+        if (newDone && exercise.cooldown === 'Yes') {
+            showCooldownReminder();
+        }
     }
 
     // full edit - opens the shared bottom sheet
@@ -648,9 +662,9 @@ document.addEventListener('click', function(event) {
         openEditSheet(workoutDay, exerciseIndex, null);
     }
 
-    // quick log - same sheet, cursor already in the Weight field
+    // quick log - same sheet, cursor already in the Reps field
     if (btn.classList.contains('btn-quick-edit')) {
-        openEditSheet(workoutDay, exerciseIndex, 'currentWeight');
+        openEditSheet(workoutDay, exerciseIndex, 'currentReps');
     }
 
     // delete (with confirm)
@@ -697,6 +711,28 @@ document.addEventListener('click', function(event) {
 });
 
 // ============================================================
+// COOLDOWN REMINDER TOAST
+// Shown when an exercise with "Begin cooldown: Yes" is checked
+// off. Tap anywhere on it to dismiss; it also auto-hides.
+// ============================================================
+
+const cooldownToast = document.getElementById('cooldownToast');
+let cooldownToastTimer = null;
+
+function showCooldownReminder() {
+    cooldownToast.classList.add('show');
+    clearTimeout(cooldownToastTimer);
+    cooldownToastTimer = setTimeout(hideCooldownReminder, 10000);
+}
+
+function hideCooldownReminder() {
+    cooldownToast.classList.remove('show');
+    clearTimeout(cooldownToastTimer);
+}
+
+cooldownToast.addEventListener('click', hideCooldownReminder);
+
+// ============================================================
 // EDIT SHEET
 // One shared form for both Edit and Quick Log. Each input's
 // data-field attribute names the exercise property it edits,
@@ -732,7 +768,8 @@ function openEditSheet(day, index, focusField) {
     // fill every field from the exercise object
     editSheet.querySelectorAll('[data-field]').forEach(function(input) {
         const field = input.dataset.field;
-        input.value = exercise[field] || (field === 'goToFailure' ? 'No' : '');
+        // selects default to "No" so exercises saved before the field existed still work
+        input.value = exercise[field] || ((field === 'goToFailure' || field === 'cooldown') ? 'No' : '');
     });
 
     // rebuild the "Alternative to" dropdown with this day's other exercises

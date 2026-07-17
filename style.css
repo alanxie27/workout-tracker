@@ -675,6 +675,58 @@ select.sheet-input { cursor: pointer; }
 .btn-solid:active,
 .btn-ghost:active { opacity: 0.8; }
 
+/* ---------- COOLDOWN REMINDER TOAST ----------
+   Drops in from the top (clear of the floating buttons), sized for
+   one thumb-tap to dismiss. Sits above sheets so it's visible even
+   if the quick-log sheet is open. */
+.cooldown-toast {
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translate(-50%, -16px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(calc(100% - 28px), 420px);
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--brass);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    cursor: pointer;
+}
+
+.cooldown-toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+}
+
+.cooldown-toast svg {
+    flex-shrink: 0;
+    color: var(--brass);
+}
+
+.ct-text {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+.ct-text strong {
+    display: block;
+    font-size: 14px;
+    color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cooldown-toast { transition: opacity 0.25s ease; }
+}
+
 /* ---------- HISTORY SHEET ---------- */
 .stat-tiles {
     display: grid;
