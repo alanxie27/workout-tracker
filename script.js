@@ -292,33 +292,82 @@ function getPairedWorkoutDay(workoutDay) {
     return null;
 }
 
-// copy an exercise's fields onto the same-named exercise in the paired day
-// (name, done and collapsed stay per-day)
+// copy an exercise's fields onto its explicitly-linked partner in the paired
+// day (name, done and collapsed stay per-day). The link is user-controlled
+// via the "Sync with" field (exercise.syncGroup) - it no longer happens
+// automatically just because two exercises share a name.
 function syncPairedExercise(day, index) {
     const pairedDay = getPairedWorkoutDay(day);
     if (!pairedDay) return;
 
     const source = workoutData[day][index];
+    if (!source.syncGroup) return;
 
-    workoutData[pairedDay].forEach(function(exercise) {
-        if (exercise.name === source.name) {
-            exercise.machinePosition = source.machinePosition;
-            exercise.tips = source.tips;
-            exercise.targetMuscle = source.targetMuscle;
-            exercise.startingSide = source.startingSide;
-            exercise.sets = source.sets;
-            exercise.reps = source.reps;
-            exercise.rest = source.rest;
-            exercise.currentWeight = source.currentWeight;
-            exercise.currentReps = source.currentReps;
-            exercise.actualReps = source.actualReps;
-            exercise.increaseWeightBy = source.increaseWeightBy;
-            exercise.goToFailure = source.goToFailure;
-            exercise.cooldown = source.cooldown;
-        }
+    const target = workoutData[pairedDay].find(function(exercise) {
+        return exercise.syncGroup === source.syncGroup;
     });
+    if (!target) return;
+
+    target.machinePosition = source.machinePosition;
+    target.tips = source.tips;
+    target.targetMuscle = source.targetMuscle;
+    target.startingSide = source.startingSide;
+    target.sets = source.sets;
+    target.reps = source.reps;
+    target.rest = source.rest;
+    target.currentWeight = source.currentWeight;
+    target.currentReps = source.currentReps;
+    target.actualReps = source.actualReps;
+    target.increaseWeightBy = source.increaseWeightBy;
+    target.goToFailure = source.goToFailure;
+    target.cooldown = source.cooldown;
 
     localStorage.setItem('workoutData', JSON.stringify(workoutData));
+}
+
+// severs a sync link: clears syncGroup off every exercise (in day + its
+// paired day) that currently carries it
+function breakSyncLink(day, groupId) {
+    if (!groupId) return;
+    const pairedDay = getPairedWorkoutDay(day);
+    [day, pairedDay].forEach(function(d) {
+        if (!d) return;
+        workoutData[d].forEach(function(exercise) {
+            if (exercise.syncGroup === groupId) {
+                exercise.syncGroup = null;
+            }
+        });
+    });
+}
+
+// one-time migration: exercises used to auto-sync just by sharing a name
+// with their paired-day counterpart. Convert any such pairs still around
+// into explicit syncGroup links so existing setups keep working, then never
+// run again (an explicit "None" choice afterward must stick).
+function migrateNameBasedSync() {
+    if (localStorage.getItem('syncMigrationDone')) return;
+
+    let changed = false;
+    ['upperA', 'lowerA'].forEach(function(day) {
+        const pairedDay = getPairedWorkoutDay(day);
+        workoutData[day].forEach(function(exercise) {
+            if (exercise.syncGroup) return;
+            const match = workoutData[pairedDay].find(function(e) {
+                return !e.syncGroup && e.name === exercise.name;
+            });
+            if (match) {
+                const groupId = 'sync-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+                exercise.syncGroup = groupId;
+                match.syncGroup = groupId;
+                changed = true;
+            }
+        });
+    });
+
+    localStorage.setItem('syncMigrationDone', 'true');
+    if (changed) {
+        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    }
 }
 
 // ============================================================
@@ -331,6 +380,7 @@ function loadWorkoutData() {
 
     if (savedData) {
         workoutData = JSON.parse(savedData);
+        migrateNameBasedSync();
         renderAllExercises();
     }
 }
@@ -383,13 +433,12 @@ function createExerciseCard(day, exercise, index, isUpNext, pairedDay) {
         exerciseCard.classList.add('next-up');
     }
 
-    // duplicate = same-named exercise exists in the paired day
-    let hasDuplicate = false;
-    if (pairedDay) {
-        workoutData[pairedDay].forEach(function(e) {
-            if (e.name === exercise.name) {
-                hasDuplicate = true;
-            }
+    // synced = this exercise is explicitly linked (via "Sync with") to an
+    // exercise in the paired day
+    let isSynced = false;
+    if (pairedDay && exercise.syncGroup) {
+        isSynced = workoutData[pairedDay].some(function(e) {
+            return e.syncGroup === exercise.syncGroup;
         });
     }
 
@@ -410,7 +459,7 @@ function createExerciseCard(day, exercise, index, isUpNext, pairedDay) {
             <button class="btn-collapse" data-day="${day}" data-index="${index}" aria-label="Expand or collapse">${ICONS.chevron}</button>
             <button class="check exercise-done" data-day="${day}" data-index="${index}" aria-label="Mark exercise done">${ICONS.check}</button>
             <span class="exercise-name">${parseColorText(exercise.name)}</span>
-            ${hasDuplicate ? `<span class="duplicate-badge">${ICONS.link}synced</span>` : ''}
+            ${isSynced ? `<span class="duplicate-badge">${ICONS.link}synced</span>` : ''}
         </div>
         <div class="card-body">
             <div class="stat-grid">
@@ -592,7 +641,8 @@ addExerciseBtn.addEventListener('click', function() {
         cooldown: 'No',
         done: false,
         collapsed: false,
-        altGroup: null
+        altGroup: null,
+        syncGroup: null
     }
 
     // add to correct workout day array
@@ -677,6 +727,11 @@ document.addEventListener('click', function(event) {
                 cleanupAltGroup(workoutDay, removed.altGroup);
             }
 
+            // deleting one half of a sync link frees the other half
+            if (removed && removed.syncGroup) {
+                breakSyncLink(workoutDay, removed.syncGroup);
+            }
+
             localStorage.setItem('workoutData', JSON.stringify(workoutData));
             rerenderAllExercises();
         }
@@ -743,6 +798,7 @@ const editSheet = document.getElementById('editSheet');
 const editSave = document.getElementById('editSave');
 const editCancel = document.getElementById('editCancel');
 const altOfSelect = document.getElementById('ef-altOf');
+const syncOfSelect = document.getElementById('ef-syncOf');
 
 let editingDay = null;
 let editingIndex = null;
@@ -790,6 +846,28 @@ function openEditSheet(day, index, focusField) {
                 altOfSelect.value = i;
             }
         });
+    }
+
+    // rebuild the "Sync with" dropdown from the paired day's exercises
+    // (upperA <-> upperB, lowerA <-> lowerB)
+    const pairedDayForSync = getPairedWorkoutDay(day);
+    syncOfSelect.innerHTML = '<option value="">None</option>';
+    if (pairedDayForSync) {
+        workoutData[pairedDayForSync].forEach(function(e, i) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = e.name.replace(/\*(red|blue|yellow|orange)\*/g, '');
+            syncOfSelect.appendChild(option);
+        });
+
+        // preselect the current sync partner, if linked
+        if (exercise.syncGroup) {
+            workoutData[pairedDayForSync].forEach(function(e, i) {
+                if (e.syncGroup === exercise.syncGroup) {
+                    syncOfSelect.value = i;
+                }
+            });
+        }
     }
 
     editSheet.classList.add('active');
@@ -865,9 +943,32 @@ editSave.addEventListener('click', function() {
         });
     }
 
+    // "Sync with" - explicit link to one exercise in the paired day.
+    // Unlike alt groups this is always exactly a pair, so picking a new
+    // partner first severs whatever link either side already had.
+    if (syncOfSelect.value === '') {
+        if (exercise.syncGroup) {
+            breakSyncLink(editingDay, exercise.syncGroup);
+        }
+    } else {
+        const pairedDayForSync = getPairedWorkoutDay(editingDay);
+        const syncTarget = workoutData[pairedDayForSync][parseInt(syncOfSelect.value)];
+
+        if (exercise.syncGroup && exercise.syncGroup !== syncTarget.syncGroup) {
+            breakSyncLink(editingDay, exercise.syncGroup);
+        }
+        if (syncTarget.syncGroup && syncTarget.syncGroup !== exercise.syncGroup) {
+            breakSyncLink(pairedDayForSync, syncTarget.syncGroup);
+        }
+
+        const syncGroupId = exercise.syncGroup || syncTarget.syncGroup || ('sync-' + Date.now());
+        exercise.syncGroup = syncGroupId;
+        syncTarget.syncGroup = syncGroupId;
+    }
+
     localStorage.setItem('workoutData', JSON.stringify(workoutData));
 
-    // keep the same-named exercise in the paired day in sync
+    // push this exercise's stats onto its explicitly-linked partner, if any
     syncPairedExercise(editingDay, editingIndex);
 
     closeEditSheet();
