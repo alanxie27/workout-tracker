@@ -340,19 +340,18 @@ function breakSyncLink(day, groupId) {
     });
 }
 
-// one-time migration: exercises used to auto-sync just by sharing a name
-// with their paired-day counterpart. Convert any such pairs still around
-// into explicit syncGroup links so existing setups keep working, then never
-// run again (an explicit "None" choice afterward must stick).
-function migrateNameBasedSync() {
-    if (localStorage.getItem('syncMigrationDone')) return;
-
+// exercises used to auto-sync just by sharing a name with their paired-day
+// counterpart. Link any such pairs still unlinked into explicit syncGroups
+// so old data keeps behaving the same way. Operates on whatever object is
+// passed in (module-level workoutData, or freshly imported data).
+function linkNameMatchedSyncPairs(data) {
     let changed = false;
     ['upperA', 'lowerA'].forEach(function(day) {
         const pairedDay = getPairedWorkoutDay(day);
-        workoutData[day].forEach(function(exercise) {
+        if (!data[day] || !data[pairedDay]) return;
+        data[day].forEach(function(exercise) {
             if (exercise.syncGroup) return;
-            const match = workoutData[pairedDay].find(function(e) {
+            const match = data[pairedDay].find(function(e) {
                 return !e.syncGroup && e.name === exercise.name;
             });
             if (match) {
@@ -363,11 +362,37 @@ function migrateNameBasedSync() {
             }
         });
     });
+    return changed;
+}
+
+// one-time migration on page load: never run again after the first time
+// (an explicit "None" choice afterward must stick).
+function migrateNameBasedSync() {
+    if (localStorage.getItem('syncMigrationDone')) return;
+
+    const changed = linkNameMatchedSyncPairs(workoutData);
 
     localStorage.setItem('syncMigrationDone', 'true');
     if (changed) {
         localStorage.setItem('workoutData', JSON.stringify(workoutData));
     }
+}
+
+// imported backups made before the "Sync with" field existed carry no
+// syncGroup at all - detect that (no exercise anywhere has the field) and
+// recreate the old same-name auto-sync so restoring an old backup doesn't
+// silently drop sync links. Backups made after this feature exists already
+// carry explicit syncGroup values (possibly null from a deliberate unlink),
+// so those are left exactly as exported.
+function migrateImportedDataIfLegacy(data) {
+    const hasAnySyncField = Object.keys(data).some(function(day) {
+        return Array.isArray(data[day]) && data[day].some(function(e) {
+            return 'syncGroup' in e;
+        });
+    });
+    if (hasAnySyncField) return;
+
+    linkNameMatchedSyncPairs(data);
 }
 
 // ============================================================
@@ -1437,6 +1462,10 @@ importFile.addEventListener('change', function(event) {
                     completionData = importedData.completionData;
                     workoutHistory = importedData.workoutHistory;
 
+                    // legacy backups (pre-"Sync with") get same-name pairs
+                    // auto-linked, same as the first-load migration does
+                    migrateImportedDataIfLegacy(workoutData);
+
                     // split settings ride along when present
                     // (older backups without them keep the current setting)
                     if (importedData.settings) {
@@ -1470,6 +1499,9 @@ importFile.addEventListener('change', function(event) {
 
                     // Old format - import just workout data
                     workoutData = importedData;
+
+                    // this format predates "Sync with" entirely - always legacy
+                    migrateImportedDataIfLegacy(workoutData);
 
                     localStorage.setItem('workoutData', JSON.stringify(workoutData));
                     rerenderAllExercises();
