@@ -197,6 +197,10 @@ main {
     white-space: nowrap;
 }
 
+.tab-btn { min-height: 44px; }   /* 44px tap target */
+.btn-icon { position: relative; }
+.btn-icon::after { content: ''; position: absolute; inset: -4px; }  /* 36px look, 44px tap area */
+
 .tab-btn.active {
     color: var(--text);
     border-bottom-color: var(--brass);
@@ -291,6 +295,11 @@ main {
 @media (prefers-reduced-motion: reduce) {
     .btn-collapse svg { transition: none; }
 }
+
+/* Tap areas grown past the drawn size (44px tall); neighbours are close, so the width stays modest */
+.btn-collapse, .check { position: relative; }
+.btn-collapse::after { content: ''; position: absolute; inset: -8px -2px; }
+.check::after { content: ''; position: absolute; inset: -11px -3px; }
 
 /* circular done checkbox */
 .check {
@@ -464,13 +473,13 @@ main {
 .card-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 8px 10px 10px;
+    gap: 2px;
+    padding: 4px 6px 6px;
 }
 
 .icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;              /* 44px tap target */
+    height: 44px;
     border-radius: 9px;
     display: flex;
     align-items: center;
