@@ -25,7 +25,7 @@
     const PLAIN = new RegExp('^' + NUM + '$');
     const DROP = new RegExp('^(' + NUM + ')(?:/' + NUM + ')+$');
     const PLATE = new RegExp('^(\\d+)x(' + NUM + ')$');
-    const PLATES = [2.5, 5, 10, 15, 25, 35, 45, 55, 100];   // lb plate sizes
+    const PLATES = [2.5, 5, 10, 15, 20, 25, 35, 45, 55, 100];   // lb plate sizes
 
     function isBlank(text) {
         return text === undefined || text === null || String(text).trim() === '';
@@ -48,11 +48,19 @@
         const drop = compact.match(DROP);
         if (drop) return Number(drop[1]);
 
+        // "85 or 80", "47.5? after 42.5": two candidates, take the lower
+        const either = s.match(/^(\d+(?:\.\d+)?)\??\s+(?:or|after)\b.*?(\d+(?:\.\d+)?)\s*$/);
+        if (either) return Math.min(Number(either[1]), Number(either[2]));
+        // "47.5 (one above 50)": leading number wins
+        const note = s.match(/^(\d+(?:\.\d+)?)\s*\([^)]*\)\s*$/);
+        if (note) return Number(note[1]);
+
         // Plate loading only when it says "per side" / "each side" - "2x45"
         // alone could mean two 45 lb dumbbells. Anything that could also be
         // sets x reps goes to review: a wrong number is worse than none.
         if (!/\b(per|each|a|one)\s+side\b/.test(s)) return null;
-        if (s.indexOf('/') !== -1) return null;   // "1x10/25" is ambiguous
+        s = s.replace(/(\d+x\s*\d+(?:\.\d+)?)\/\d+(?:\.\d+)?/g, '$1');   // "1x10/25": first, like drop sets
+        if (s.indexOf('/') !== -1) return null;
 
         let rest = s
             .replace(/\b(per|each|a|one)\s+side\b/g, ' ')

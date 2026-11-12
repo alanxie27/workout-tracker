@@ -10,7 +10,7 @@ const w = [
   ['1x35 2x45 each side', 125], ['45 per side', 45], ['2x45 + 1x10 per side', 100],
   ['2x45 per side + bar', 90], ['2x45 per side machine', 90], ['4x2.5 per side', 10],
   ['*red*125*red*', 125],
-  ['2x45 + 1x10/25 per side', null], ['50 or above 42.5', null], ['2x45', null],
+  ['2x45 + 1x10/25 per side', 100], ['1x45 + 1x20 per side', 65], ['85 or 80', 80], ['47.5? after 42.5', 42.5], ['47.5 (one above 50)', 47.5], ['50 or above 42.5', 42.5], ['2x45', null],
   ['heavy', null],
   ['per side: 2x 45', 90], ['per side: 2x 45 1x 10', 100], ['per side: 1x 45 1x 35', 80],
   ['45 per side 3x8', null], ['3x10 per side', null], ['45 each side 2 sides', null], ['2 sides', null],
@@ -60,8 +60,8 @@ const exp = { workoutData: {
 const p = L.readExport('workout-data-2026-10-05.json', exp);
 assert.strictEqual(p.date, '2026-10-05');
 assert.strictEqual(p.rows.length, 3, 'synced dup collapsed, empty skipped, different Row kept');
-assert.strictEqual(p.review.length, 1);
-assert.strictEqual(p.review[0].name, 'Row');
+assert.strictEqual(p.review.length, 0);
+assert.strictEqual(p.rows[1].weight, 100);
 assert.strictEqual(p.rows[0].reps, '9-8-8');
 assert.throws(() => L.readExport('x.json', { foo: 1 }));
 assert.strictEqual(L.exportDate('backup.json', { workoutHistory: [{ date: '2026-09-01T10:00:00Z' }, { date: '2026-09-03T10:00:00Z' }] }), '2026-09-03');
