@@ -1,3 +1,16 @@
+// A cached old index.html (no lifts.js tag) with a fresh script.js would
+// crash on load right after a deploy. Reload once to get the new page.
+if (typeof Lifts === 'undefined') {
+    try {
+        if (!sessionStorage.getItem('liftsReload')) {
+            sessionStorage.setItem('liftsReload', '1');
+            location.reload();
+        }
+    } catch (e) { /* storage blocked: fall through and fail loudly */ }
+    throw new Error('lifts.js did not load - reload the page');
+}
+try { sessionStorage.removeItem('liftsReload'); } catch (e) { /* fine */ }
+
 // ============================================================
 // STATE + DOM REFERENCES
 // ============================================================
@@ -969,8 +982,14 @@ editSave.addEventListener('click', function() {
                 e.done = groupDone;
             }
         });
-        // the one just linked in wasn't the one you tapped this session
+        // the one just linked in wasn't the one you tapped this session;
+        // if the group was already checked off, it was the target
         exercise.didThis = false;
+        if (groupDone && !workoutData[editingDay].some(function(e) {
+            return e.altGroup === groupId && e.didThis === true;
+        })) {
+            target.didThis = true;
+        }
     }
 
     // "Sync with" - explicit link to one exercise in the paired day.

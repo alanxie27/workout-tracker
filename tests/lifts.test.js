@@ -11,7 +11,9 @@ const w = [
   ['2x45 per side + bar', 90], ['2x45 per side machine', 90], ['4x2.5 per side', 10],
   ['*red*125*red*', 125],
   ['2x45 + 1x10/25 per side', null], ['50 or above 42.5', null], ['2x45', null],
-  ['heavy', null], ['', null], [null, null], ['per side', null],
+  ['heavy', null],
+  ['45 per side 3x8', null], ['3x10 per side', null], ['45 each side 2 sides', null], ['2 sides', null],
+  ['2x45 side', null], ['5x45 per side', null], ['2x45 45 per side', null], ['', null], [null, null], ['per side', null],
 ];
 for (const [inp, out] of w) assert.strictEqual(L.parseWeight(inp), out, 'parseWeight(' + JSON.stringify(inp) + ')');
 
@@ -74,5 +76,11 @@ h = L.mergeImports(h, [L.importEntry('workout-data-2026-10-05.json', p)]);
 assert.strictEqual(h.length, 3, 're-import replaces, no duplicate');
 assert.deepStrictEqual(L.realWorkouts(h), real);
 assert.strictEqual(new Date(e1.date).getDate(), 5);
+
+// exportDate: UTC-named file shifts back to the local day of the last workout
+const sunEve = new Date(2026, 9, 11, 19, 30).toISOString();   // Sun Oct 11, 7:30pm local
+assert.strictEqual(L.exportDate('workout-data-2026-10-12.json', { workoutHistory: [{ date: sunEve }] }), '2026-10-11');
+assert.strictEqual(L.exportDate('workout-data-2026-10-12.json', { workoutHistory: [{ date: new Date(2026, 9, 1, 10).toISOString() }] }), '2026-10-12');
+assert.strictEqual(L.exportDate('workout-data-2026-10-12.json', { workoutHistory: [] }), '2026-10-12');
 
 console.log('all lifts tests passed');

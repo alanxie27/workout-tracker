@@ -25,6 +25,7 @@
     const PLAIN = new RegExp('^' + NUM + '$');
     const DROP = new RegExp('^(' + NUM + ')(?:/' + NUM + ')+$');
     const PLATE = new RegExp('^(\\d+)x(' + NUM + ')$');
+    const PLATES = [2.5, 5, 10, 15, 25, 35, 45, 55, 100];   // lb plate sizes
 
     function isBlank(text) {
         return text === undefined || text === null || String(text).trim() === '';
@@ -47,27 +48,40 @@
         const drop = compact.match(DROP);
         if (drop) return Number(drop[1]);
 
-        // plate loading only when it says "side" - "2x45" alone could mean
-        // two 45 lb dumbbells, so that goes to review instead of guessing
-        if (!/\bsides?\b/.test(s)) return null;
+        // Plate loading only when it says "per side" / "each side" - "2x45"
+        // alone could mean two 45 lb dumbbells. Anything that could also be
+        // sets x reps goes to review: a wrong number is worse than none.
+        if (!/\b(per|each|a|one)\s+side\b/.test(s)) return null;
         if (s.indexOf('/') !== -1) return null;   // "1x10/25" is ambiguous
 
         let rest = s
-            .replace(/\b(per|each|a|one)\s+sides?\b/g, ' ')
-            .replace(/\bsides?\b/g, ' ')
+            .replace(/\b(per|each|a|one)\s+side\b/g, ' ')
             .replace(/\b(plus|and|on|the|bar|barbell|machine|sled)\b/g, ' ')
             .replace(/[+,&]/g, ' ')
             .replace(/(\d)\s*x\s*(\d)/g, '$1x$2')  // "2x 45" -> "2x45"
             .replace(/\s+/g, ' ')
             .trim();
         if (rest === '') return null;
+        const toks = rest.split(' ');
+
+        // "45 per side": a lone number is the load on one side
+        if (toks.length === 1 && PLAIN.test(toks[0])) return Number(toks[0]);
 
         let total = 0;
-        for (const tok of rest.split(' ')) {
+        for (const tok of toks) {
             const plate = tok.match(PLATE);
-            if (plate) { total += Number(plate[1]) * Number(plate[2]); continue; }
-            if (PLAIN.test(tok)) { total += Number(tok); continue; }  // "45 per side"
-            return null;                                              // anything else: review
+            if (!plate) return null;                         // bare number mixed with plates, words: review
+            const count = Number(plate[1]);
+            const kg = Number(plate[2]);
+            if (count < 1 || count > 4) return null;         // "3x10" smells like sets x reps
+            if (PLATES.indexOf(kg) === -1) return null;      // not a plate size: "3x8"
+            total += count * kg;
+        }
+        // one "3x10"-style token on its own is too close to sets x reps
+        // (3x45 or 4x2.5 per side are clearly plates; 3x5/3x10/3x15 aren't)
+        if (toks.length === 1) {
+            const only = toks[0].match(PLATE);
+            if (Number(only[1]) >= 3 && [5, 10, 15].indexOf(Number(only[2])) !== -1) return null;
         }
         // float noise from 2.5 plates
         return Math.round(total * 100) / 100;
@@ -141,17 +155,33 @@
     // ---------- importing an old weekly export ----------
     const DAYS = ['upperA', 'lowerA', 'upperB', 'lowerB'];
 
-    // date for an export: the date in its file name, else the newest
-    // workout it recorded. Returns 'YYYY-MM-DD' or null.
+    function localDay(d) {
+        const p = function (n) { return (n < 10 ? '0' : '') + n; };
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+
+    // date for an export, 'YYYY-MM-DD' (local) or null.
+    // The export names files by the UTC date, so a Sunday-evening export
+    // in Central time is named Monday and would land in the next week.
+    // When the newest workout in the file is on the filename's day or the
+    // day before, that local day is the real one. Otherwise the filename.
     function exportDate(fileName, data) {
-        const m = String(fileName || '').match(/(\d{4}-\d{2}-\d{2})/);
-        if (m) return m[1];
         const hist = data && Array.isArray(data.workoutHistory) ? data.workoutHistory : [];
         let newest = null;
         hist.forEach(function (h) {
-            if (h && h.date && (!newest || h.date > newest)) newest = h.date;
+            const t = h && h.date ? new Date(h.date) : null;
+            if (t && !isNaN(t) && (!newest || t > newest)) newest = t;
         });
-        return newest ? String(newest).slice(0, 10) : null;
+        const m = String(fileName || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (!m) return newest ? localDay(newest) : null;
+
+        const named = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+        if (newest) {
+            const last = localDay(newest);
+            const before = new Date(named); before.setDate(before.getDate() - 1);
+            if (last === localDay(named) || last === localDay(before)) return last;
+        }
+        return localDay(named);
     }
 
     // Reads one export. Returns { date, rows, review } where review is the
