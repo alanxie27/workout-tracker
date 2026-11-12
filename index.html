@@ -225,7 +225,30 @@
                     <input type="file" id="importFile" accept=".json" style="display: none;">
                 </div>
 
+                <!-- adds old weekly exports to history as data points (weights
+                     and reps for charts). Never replaces anything and never
+                     counts toward streaks. -->
+                <div class="backup-row">
+                    <button id="importWeeksBtn" class="btn-secondary">Import past weeks</button>
+                    <input type="file" id="importWeeksFile" accept=".json" multiple style="display: none;">
+                </div>
+
                 <button id="closeHistoryModal" class="btn-ghost btn-close-sheet">Close</button>
+            </div>
+        </div>
+
+        <!-- IMPORT REVIEW: weights the rules couldn't read, fixed once before
+             anything is saved. script.js fills the list. -->
+        <div id="importReviewModal" class="modal">
+            <div class="sheet">
+                <div class="sheet-grab"></div>
+                <h2>Check these weights</h2>
+                <p id="importReviewSummary" class="split-note"></p>
+                <div id="importReviewList"></div>
+                <div class="sheet-btns">
+                    <button id="importReviewCancel" class="btn-ghost">Cancel</button>
+                    <button id="importReviewSave" class="btn-solid">Save to history</button>
+                </div>
             </div>
         </div>
 
@@ -246,6 +269,7 @@
          local copy so the app never waits on, or breaks with, someone else's server. -->
     <script src="vendor/supabase.js"></script>
     <script src="sync.js"></script>
+    <script src="lifts.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

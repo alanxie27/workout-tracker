@@ -717,6 +717,9 @@ document.addEventListener('click', function(event) {
             workoutData[workoutDay].forEach(function(e) {
                 if (e.altGroup === exercise.altGroup) {
                     e.done = newDone;
+                    // remember which alternative you actually did, so
+                    // history logs that one and not the others
+                    e.didThis = newDone && e === exercise;
                 }
             });
         } else {
@@ -966,6 +969,8 @@ editSave.addEventListener('click', function() {
                 e.done = groupDone;
             }
         });
+        // the one just linked in wasn't the one you tapped this session
+        exercise.didThis = false;
     }
 
     // "Sync with" - explicit link to one exercise in the paired day.
@@ -1100,18 +1105,21 @@ function saveWorkoutHistory() {
     Sync.save('workoutHistory', JSON.stringify(workoutHistory));
 }
 
-// Add workout to history
+// Add workout to history, with what you lifted. Must run BEFORE the
+// finished day's checkmarks are cleared - the snapshot reads them.
 function addToHistory(workoutDay) {
     const historyEntry = {
         date: new Date().toISOString(),
-        workout: workoutDay
+        workout: workoutDay,
+        exercises: Lifts.snapshotDay(workoutData[workoutDay], workoutDay)
     };
     workoutHistory.unshift(historyEntry); // Add to beginning of array
     saveWorkoutHistory();
 }
 
 function calculateStreak() {
-    if (workoutHistory.length === 0) return 0;
+    const sessions = Lifts.realWorkouts(workoutHistory);
+    if (sessions.length === 0) return 0;
 
     let streak = 0;
     const today = new Date();
@@ -1127,7 +1135,7 @@ function calculateStreak() {
         weekEnd.setDate(weekEnd.getDate() + 7);
 
         // Get all workouts in this week
-        const workoutsThisWeek = workoutHistory.filter(entry => {
+        const workoutsThisWeek = sessions.filter(entry => {
             const entryDate = new Date(entry.date);
             return entryDate >= weekStart && entryDate < weekEnd;
         });
@@ -1162,7 +1170,7 @@ function calculateMonthWorkouts() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    return workoutHistory.filter(entry => {
+    return Lifts.realWorkouts(workoutHistory).filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate.getMonth() === currentMonth &&
                entryDate.getFullYear() === currentYear;
@@ -1245,7 +1253,7 @@ function renderCalendar() {
         }
 
         // Check if there's a workout on this day
-        const hasWorkout = workoutHistory.some(entry => {
+        const hasWorkout = Lifts.realWorkouts(workoutHistory).some(entry => {
             const entryDate = new Date(entry.date);
             return entryDate.getDate() === day &&
                    entryDate.getMonth() === currentCalendarMonth &&
@@ -1457,6 +1465,11 @@ importFile.addEventListener('change', function(event) {
 
                 // Check if it's the new format (with workoutData, completionData, workoutHistory)
                 if (importedData.workoutData && importedData.completionData && importedData.workoutHistory) {
+                    // this wipes saved history, including logged weights -
+                    // easy to mix up with "Import past weeks", so ask
+                    if (!confirm('Restore this backup?\n\nIt REPLACES all exercises and history on this device, including logged weights. To add old weeks as data points, cancel and use "Import past weeks".')) {
+                        return;
+                    }
                     // New format - import everything
                     workoutData = importedData.workoutData;
                     completionData = importedData.completionData;
@@ -1519,6 +1532,162 @@ importFile.addEventListener('change', function(event) {
         reader.readAsText(file);
     }
 });
+
+// ============================================================
+// IMPORT PAST WEEKS
+// Old weekly exports become history data points (weights + reps per
+// lift) for charts. Merges, never replaces; imported weeks are flagged
+// so streaks and the calendar ignore them. Weights the rules can't read
+// go to a review sheet first - nothing is saved until you press Save.
+// ============================================================
+
+const importWeeksBtn = document.getElementById('importWeeksBtn');
+const importWeeksFile = document.getElementById('importWeeksFile');
+const importReviewModal = document.getElementById('importReviewModal');
+const importReviewList = document.getElementById('importReviewList');
+const importReviewSummary = document.getElementById('importReviewSummary');
+const importReviewSave = document.getElementById('importReviewSave');
+const importReviewCancel = document.getElementById('importReviewCancel');
+
+// the batch waiting on the review sheet: [{ fileName, parsed }]
+let pendingImport = null;
+
+importWeeksBtn.addEventListener('click', function() {
+    importWeeksFile.value = '';   // picking the same files again still fires change
+    importWeeksFile.click();
+});
+
+function readFileText(file) {
+    return new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onerror = function() { reject(reader.error); };
+        reader.readAsText(file);
+    });
+}
+
+importWeeksFile.addEventListener('change', async function(event) {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    const batch = [];
+    const problems = [];
+    const byDate = {};
+    for (const file of files) {
+        try {
+            const parsed = Lifts.readExport(file.name, JSON.parse(await readFileText(file)));
+            if (byDate[parsed.date]) {
+                problems.push(file.name + ': same week as ' + byDate[parsed.date] + ', skipped');
+                continue;
+            }
+            byDate[parsed.date] = file.name;
+            batch.push({ fileName: file.name, parsed: parsed });
+        } catch (err) {
+            problems.push(file.name + ': ' + (err && err.message ? err.message : 'could not read'));
+        }
+    }
+
+    if (batch.length === 0) {
+        alert('Nothing imported.\n\n' + problems.join('\n'));
+        return;
+    }
+
+    pendingImport = { batch: batch, problems: problems };
+    const reviewCount = batch.reduce(function(n, b) { return n + b.parsed.review.length; }, 0);
+    if (reviewCount === 0) {
+        commitImport();
+    } else {
+        openImportReview();
+    }
+});
+
+function openImportReview() {
+    importReviewList.innerHTML = '';
+    let count = 0;
+    pendingImport.batch.forEach(function(b, bi) {
+        b.parsed.review.forEach(function(row) {
+            count++;
+            const wrap = document.createElement('div');
+            wrap.className = 'review-row';
+
+            const head = document.createElement('div');
+            head.className = 'rr-head';
+            const name = document.createElement('span');
+            name.textContent = row.name;
+            const date = document.createElement('span');
+            date.className = 'rr-date';
+            date.textContent = b.parsed.date;
+            head.append(name, date);
+
+            const raw = document.createElement('div');
+            raw.className = 'rr-raw';
+            raw.textContent = 'You typed: ' + row.weightRaw;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'decimal';
+            input.className = 'sheet-input';
+            input.placeholder = 'Weight in lb, or leave blank to skip';
+            input.dataset.batch = bi;
+            input.dataset.row = b.parsed.rows.indexOf(row);
+
+            wrap.append(head, raw, input);
+            importReviewList.appendChild(wrap);
+        });
+    });
+    const weeks = pendingImport.batch.length;
+    importReviewSummary.textContent = weeks + (weeks === 1 ? ' week' : ' weeks') + ' read. ' +
+        count + (count === 1 ? ' weight needs' : ' weights need') +
+        ' a number. Blank keeps what you typed with no number, so it won\'t chart.';
+    importReviewModal.classList.add('active');
+}
+
+importReviewSave.addEventListener('click', function() {
+    if (!pendingImport) return;
+    const inputs = importReviewList.querySelectorAll('input');
+    let bad = 0;
+    inputs.forEach(function(input) {
+        const text = input.value.trim();
+        const ok = text === '' || Lifts.parseWeight(text) !== null;
+        input.style.borderColor = ok ? '' : 'var(--red, #e5484d)';
+        if (!ok) bad++;
+    });
+    if (bad > 0) {
+        alert(bad + (bad === 1 ? ' entry isn\'t' : ' entries aren\'t') + ' a weight. Type a number like 125, or leave it blank.');
+        return;
+    }
+    inputs.forEach(function(input) {
+        const text = input.value.trim();
+        if (text === '') return;
+        const row = pendingImport.batch[Number(input.dataset.batch)].parsed.rows[Number(input.dataset.row)];
+        row.weight = Lifts.parseWeight(text);
+        row.weightFixed = text;   // what you corrected it to, kept next to the original
+    });
+    importReviewModal.classList.remove('active');
+    commitImport();
+});
+
+importReviewCancel.addEventListener('click', function() {
+    pendingImport = null;
+    importReviewModal.classList.remove('active');
+});
+
+function commitImport() {
+    const batch = pendingImport.batch;
+    const problems = pendingImport.problems;
+    pendingImport = null;
+
+    const entries = batch.map(function(b) { return Lifts.importEntry(b.fileName, b.parsed); });
+    workoutHistory = Lifts.mergeImports(workoutHistory, entries);
+    saveWorkoutHistory();
+    renderCalendar();
+
+    const lifts = entries.reduce(function(n, e) { return n + e.exercises.length; }, 0);
+    let msg = 'Added ' + entries.length + (entries.length === 1 ? ' week' : ' weeks') +
+        ' (' + lifts + ' lifts) to history. Streaks and the calendar are unchanged.';
+    if (problems.length) msg += '\n\nSkipped:\n' + problems.join('\n');
+    alert(msg);
+}
 
 // ============================================================
 // THEME TOGGLE

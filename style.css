@@ -883,6 +883,26 @@ select.sheet-input { cursor: pointer; }
     background: var(--card-2);
 }
 
+/* --- import review: one row per weight the rules couldn't read --- */
+.review-row {
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+}
+.review-row .rr-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.review-row .rr-date { color: var(--muted); font-weight: 500; white-space: nowrap; }
+.review-row .rr-raw {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 3px 0 6px;
+    overflow-wrap: anywhere;
+}
+
 .btn-close-sheet {
     width: 100%;
     margin-top: 10px;
