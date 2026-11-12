@@ -117,3 +117,16 @@ workout-tracker/
 ## License
 
 Personal project - free to use and modify.
+
+## Sync, sign-in and the address
+
+Lives at https://workout.alanxie.dev and inside the Life OS hub (https://os.alanxie.dev).
+
+- **Your data follows you.** Tap the chip in the header and sign in with the same email and password as Cameron. After that, phone and laptop show the same thing.
+- **It still works with no signal.** The app saves to the device first, then uploads. The chip says `Synced`, `Saving…` or `Not synced`. `Not synced` means the change is safe on this device and has not reached your account yet.
+- **Two devices changing things at once.** Whichever uploads first is kept. The other device's unsynced change is set aside on that device under a `backup:` key, never deleted, and the chip says `read me`.
+- **Undo on the server.** Every copy that gets replaced is kept for 60 days in `workout.state_history`.
+- **Moving in from the old address.** Old data lives in the browser under `alanxie27.github.io` and does not follow the app to the new address. Export there first, then at the new address: sign in, then Import. Do this on one device; the others pick it up when they sign in.
+- **Setup, once:** run `supabase/0001_workout.sql` in Cameron's Supabase project and add `workout` to Settings → API → Exposed schemas.
+- `sync.js` holds all of it and explains itself at the top. `vendor/supabase.js` is a local copy of the Supabase library (2.115.0).
+- Opened as `?embed=1` (the hub does this) the header loses its extra top space. Nothing is hidden.

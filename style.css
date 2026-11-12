@@ -892,6 +892,51 @@ select.sheet-input { cursor: pointer; }
     font-weight: 600;
 }
 
+/* --- sync: header chip + sheet (sync.js builds the markup) --- */
+.sync-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;              /* with the header's padding, a 44px tap */
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    position: relative;
+}
+.sync-chip::after { content: ''; position: absolute; inset: -5px; }  /* widens the tap area */
+.sync-chip:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.sync-chip[data-phase="synced"] .sync-dot { background: var(--moss); }
+.sync-chip[data-phase="pending"] .sync-dot,
+.sync-chip[data-phase="syncing"] .sync-dot { background: var(--brass); }
+/* Not synced is the one state that must not be missed: text and border turn too,
+   so it does not rest on the dot's color alone. */
+.sync-chip[data-phase="error"],
+.sync-chip[data-phase="notice"],
+.sync-chip[data-phase="signedOut"] { color: var(--text); border-color: var(--brass); }
+.sync-chip[data-phase="error"] .sync-dot,
+.sync-chip[data-phase="notice"] .sync-dot { background: var(--brass); }
+.sync-note { font-size: 13px; line-height: 1.5; color: var(--muted); margin: 0 0 12px; }
+.sync-note strong { color: inherit; font-weight: 600; word-break: break-all; }
+.sync-error { font-size: 13px; line-height: 1.5; font-weight: 600; margin: 0 0 12px; }
+.sync-wide { width: 100%; min-height: 44px; }
+#syncSheet .btn-secondary { min-height: 44px; }
+
+/* Inside the Life OS hub: the hub's header is already above, so drop the
+   extra top space meant for a phone's status bar. Nothing is hidden. */
+html.embed header { padding-top: 10px; }
+
+/* Three chips and a title do not fit one row on a narrow phone. */
+@media (max-width: 420px) {
+    header { flex-wrap: wrap; }
+    .header-actions { margin-left: auto; }
+}
+
 /* ---------- DESKTOP (768px and up) ---------- */
 @media (min-width: 768px) {
     header { padding-top: 36px; }

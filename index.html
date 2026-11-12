@@ -242,6 +242,10 @@
     </main>
 
     <!-- SCRIPT at end of body so the page elements exist before JS runs -->
+    <!-- Sync goes first: script.js saves through it. The Supabase library is a
+         local copy so the app never waits on, or breaks with, someone else's server. -->
+    <script src="vendor/supabase.js"></script>
+    <script src="sync.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

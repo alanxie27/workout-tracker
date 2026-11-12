@@ -44,7 +44,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
-    localStorage.setItem('appSettings', JSON.stringify(appSettings));
+    Sync.save('appSettings', JSON.stringify(appSettings));
 }
 
 // the workouts that count toward the current week
@@ -72,7 +72,7 @@ function loadSplitHistory() {
 }
 
 function saveSplitHistory() {
-    localStorage.setItem('splitHistory', JSON.stringify(splitHistory));
+    Sync.save('splitHistory', JSON.stringify(splitHistory));
 }
 
 // the split that governed a given week = the last change before it ended
@@ -164,13 +164,13 @@ function resetWeekCompletion() {
             exercise.done = false;
         });
     }
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    Sync.save('workoutData', JSON.stringify(workoutData));
     rerenderAllExercises();
 }
 
 // Save completion data
 function saveCompletionData() {
-    localStorage.setItem('completionData', JSON.stringify(completionData));
+    Sync.save('completionData', JSON.stringify(completionData));
 }
 
 // update tab checkmarks + the header stats that depend on completion
@@ -322,7 +322,7 @@ function syncPairedExercise(day, index) {
     target.goToFailure = source.goToFailure;
     target.cooldown = source.cooldown;
 
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    Sync.save('workoutData', JSON.stringify(workoutData));
 }
 
 // severs a sync link: clears syncGroup off every exercise (in day + its
@@ -374,7 +374,7 @@ function migrateNameBasedSync() {
 
     localStorage.setItem('syncMigrationDone', 'true');
     if (changed) {
-        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        Sync.save('workoutData', JSON.stringify(workoutData));
     }
 }
 
@@ -674,7 +674,7 @@ addExerciseBtn.addEventListener('click', function() {
     workoutData[workoutDay].push(exerciseObj);
 
     // save to localStorage
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    Sync.save('workoutData', JSON.stringify(workoutData));
 
     // rebuild the lists from data (one template lives in renderAllExercises,
     // so new cards always look identical to loaded ones)
@@ -703,7 +703,7 @@ document.addEventListener('click', function(event) {
     // expand / collapse a card
     if (btn.classList.contains('btn-collapse')) {
         workoutData[workoutDay][exerciseIndex].collapsed = !workoutData[workoutDay][exerciseIndex].collapsed;
-        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        Sync.save('workoutData', JSON.stringify(workoutData));
         rerenderAllExercises();
     }
 
@@ -723,7 +723,7 @@ document.addEventListener('click', function(event) {
             exercise.done = newDone;
         }
 
-        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        Sync.save('workoutData', JSON.stringify(workoutData));
         rerenderAllExercises();
 
         // this exercise wants a cooldown - remind on the way to the next one
@@ -757,7 +757,7 @@ document.addEventListener('click', function(event) {
                 breakSyncLink(workoutDay, removed.syncGroup);
             }
 
-            localStorage.setItem('workoutData', JSON.stringify(workoutData));
+            Sync.save('workoutData', JSON.stringify(workoutData));
             rerenderAllExercises();
         }
     }
@@ -771,7 +771,7 @@ document.addEventListener('click', function(event) {
         exercises[exerciseIndex] = exercises[exerciseIndex - 1];
         exercises[exerciseIndex - 1] = temp;
 
-        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        Sync.save('workoutData', JSON.stringify(workoutData));
         rerenderAllExercises();
     }
 
@@ -785,7 +785,7 @@ document.addEventListener('click', function(event) {
         exercises[exerciseIndex] = exercises[exerciseIndex + 1];
         exercises[exerciseIndex + 1] = temp;
 
-        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        Sync.save('workoutData', JSON.stringify(workoutData));
         rerenderAllExercises();
     }
 });
@@ -991,7 +991,7 @@ editSave.addEventListener('click', function() {
         syncTarget.syncGroup = syncGroupId;
     }
 
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    Sync.save('workoutData', JSON.stringify(workoutData));
 
     // push this exercise's stats onto its explicitly-linked partner, if any
     syncPairedExercise(editingDay, editingIndex);
@@ -1042,7 +1042,7 @@ document.addEventListener('click', function(event) {
     workoutData[workoutDay].forEach(function(exercise) {
         exercise.done = false;
     });
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    Sync.save('workoutData', JSON.stringify(workoutData));
 
     // is the week finished?
     const weekComplete = activePairDays().every(day => completionData[day]);
@@ -1097,7 +1097,7 @@ function loadWorkoutHistory() {
 
 // Save workout history
 function saveWorkoutHistory() {
-    localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+    Sync.save('workoutHistory', JSON.stringify(workoutHistory));
 }
 
 // Add workout to history
@@ -1483,9 +1483,9 @@ importFile.addEventListener('change', function(event) {
                     saveSplitHistory();
 
                     // Save all to localStorage
-                    localStorage.setItem('workoutData', JSON.stringify(workoutData));
-                    localStorage.setItem('completionData', JSON.stringify(completionData));
-                    localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+                    Sync.save('workoutData', JSON.stringify(workoutData));
+                    Sync.save('completionData', JSON.stringify(completionData));
+                    Sync.save('workoutHistory', JSON.stringify(workoutHistory));
 
                     // Update UI
                     updateTabCheckmarks();
@@ -1503,7 +1503,7 @@ importFile.addEventListener('change', function(event) {
                     // this format predates "Sync with" entirely - always legacy
                     migrateImportedDataIfLegacy(workoutData);
 
-                    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+                    Sync.save('workoutData', JSON.stringify(workoutData));
                     rerenderAllExercises();
 
                     alert('Data imported successfully!');
