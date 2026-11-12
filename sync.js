@@ -273,9 +273,51 @@
         return null;
     }
 
+    // ---------- signed in by the Life OS hub ----------
+    // On iPhone, an app inside the hub's frame loses its saved sign-in when the
+    // hub is fully closed; the hub's own survives. So when this page is inside
+    // the hub with no sign-in, it asks the hub, once per page load. The hub's
+    // server makes a one-time code for the owner's account only, and this page
+    // trades it for a session of its own (sharing the hub's would get both
+    // cancelled). Only a reply from the hub, to this frame, is believed.
+    const HUB_ORIGIN = 'https://os.alanxie.dev';
+    let hubTried = false;
+    function framed() { try { return window.parent !== window; } catch (e) { return true; } }
+
+    function signInThroughHub() {
+        hubTried = true;
+        return new Promise(function (resolve) {
+            const timer = setTimeout(done, 10000);
+            function done() { clearTimeout(timer); window.removeEventListener('message', onMessage); resolve(); }
+            async function onMessage(e) {
+                if (e.origin !== HUB_ORIGIN || e.source !== window.parent) return;
+                if (!e.data || e.data.type !== 'lifeos:session-handoff') return;
+                done();
+                if (typeof e.data.tokenHash !== 'string') return;
+                // "email" in current Supabase, "magiclink" in older versions;
+                // a wrong type is refused without using the code up.
+                const first = await client.auth.verifyOtp({ token_hash: e.data.tokenHash, type: 'email' });
+                if (first.error) await client.auth.verifyOtp({ token_hash: e.data.tokenHash, type: 'magiclink' });
+            }
+            window.addEventListener('message', onMessage);
+            window.parent.postMessage({ type: 'lifeos:session-request' }, HUB_ORIGIN);
+        });
+    }
+
     function onSession(session) {
         const next = session ? session.user : null;
-        if (!next) { user = null; setPhase('signedOut'); return; }
+        if (!next) {
+            user = null;
+            if (!hubTried && framed()) {
+                // Success arrives as a normal sign-in event. On failure the
+                // chip just says "Sign in", as before.
+                setPhase('starting');
+                signInThroughHub().then(function () { if (!user) setPhase('signedOut'); });
+                return;
+            }
+            setPhase('signedOut');
+            return;
+        }
         if (user && user.id === next.id) return; // token refresh, nothing new
         user = next;
         if (meta.user && meta.user !== user.id) {
