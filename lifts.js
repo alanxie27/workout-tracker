@@ -57,7 +57,7 @@
         let rest = s
             .replace(/\b(per|each|a|one)\s+side\b/g, ' ')
             .replace(/\b(plus|and|on|the|bar|barbell|machine|sled)\b/g, ' ')
-            .replace(/[+,&]/g, ' ')
+            .replace(/[+,&:;]/g, ' ')
             .replace(/(\d)\s*x\s*(\d)/g, '$1x$2')  // "2x 45" -> "2x45"
             .replace(/\s+/g, ' ')
             .trim();

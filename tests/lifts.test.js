@@ -12,6 +12,7 @@ const w = [
   ['*red*125*red*', 125],
   ['2x45 + 1x10/25 per side', null], ['50 or above 42.5', null], ['2x45', null],
   ['heavy', null],
+  ['per side: 2x 45', 90], ['per side: 2x 45 1x 10', 100], ['per side: 1x 45 1x 35', 80],
   ['45 per side 3x8', null], ['3x10 per side', null], ['45 each side 2 sides', null], ['2 sides', null],
   ['2x45 side', null], ['5x45 per side', null], ['2x45 45 per side', null], ['', null], [null, null], ['per side', null],
 ];
