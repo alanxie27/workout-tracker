@@ -64,8 +64,8 @@ Built-in browser at 390 px wide, per app: horizontal overflow, tap targets, embe
 3. code-reviewer-deep on tasks 1-2 diff.
 4. Tasks 3 and 4.
 
-## Decisions needed before building
+## Decisions (confirmed by Alan)
 
-1. After snapshotting at completion, should actualReps be cleared (like `done`)? Default if you don't answer: **no**, leave behavior alone and accept occasional stale notes.
-2. Imports live inside `workoutHistory` flagged `imported` (no SQL change) vs a new sync key (needs a Supabase migration). Default: **inside workoutHistory**.
-3. Snapshot only exercises marked done (default) vs all exercises on the day.
+1. **Do not clear `actualReps` on completion.** Existing behavior stays: editing `currentReps` already wipes the "got ..." note. Snapshot records `actualReps` if non-empty, else `currentReps`.
+2. **Imports live inside `workoutHistory`**, flagged `imported`. No SQL change.
+3. **Snapshot only exercises marked done** (fallback to the whole day if none are checked).
