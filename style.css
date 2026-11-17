@@ -839,6 +839,103 @@ select.sheet-input { cursor: pointer; }
 }
 
 /* --- weekly split toggle --- */
+/* ---------- PROGRESS (weight over time per lift, in the history sheet) ---------- */
+.progress-field { margin-top: 18px; }
+
+.progress-list {
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.progress-empty {
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted);
+}
+
+.progress-item + .progress-item { border-top: 1px solid var(--line); }
+
+.progress-row {
+    width: 100%;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: none;
+    border: 0;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.progress-row:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
+
+.progress-name { flex: 1; min-width: 0; }
+.progress-name b {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.progress-name small { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+.progress-name small.up { color: var(--moss); }
+.progress-name small.down { color: var(--ember); }
+
+.progress-spark { flex: none; color: var(--muted); line-height: 0; }
+.progress-spark.up { color: var(--moss); }
+.progress-spark.down { color: var(--ember); }
+
+.progress-now {
+    flex: none;
+    min-width: 44px;
+    text-align: right;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.progress-detail { position: relative; padding: 0 14px 12px; color: var(--brass); }
+.progress-detail .progress-chart { display: block; height: 110px; width: calc(100% - 36px); }
+.progress-range {
+    position: absolute;
+    top: 0;
+    right: 14px;
+    height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--muted);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+}
+.progress-best { margin-top: 8px; font-size: 12px; color: var(--muted); }
+
+.progress-sessions { list-style: none; margin-top: 8px; border-top: 1px solid var(--line); }
+.progress-sessions li {
+    display: grid;
+    grid-template-columns: 1fr auto 72px;
+    gap: 10px;
+    align-items: baseline;
+    padding: 7px 0;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
+}
+.progress-sessions li:last-child { border-bottom: 0; }
+.progress-sessions .d { color: var(--muted); }
+.progress-sessions .d i { font-style: normal; font-size: 11px; opacity: 0.8; }
+.progress-sessions .w { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.progress-sessions .r { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
 .split-field { margin-top: 16px; }
 
 .seg {

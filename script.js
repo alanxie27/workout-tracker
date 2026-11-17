@@ -1300,7 +1300,108 @@ function renderCalendar() {
 // Rename old renderHistory to keep compatibility
 function renderHistory() {
     renderCalendar();
+    renderProgress();
 }
+
+// ============================================================
+// PROGRESS (weight over time per lift)
+// ============================================================
+// Built from workoutHistory by Lifts.progress: one row per lift with the
+// latest weight, the change since the first saved one and a small line.
+// Tap a row to open a bigger chart and the list of sessions.
+
+let openProgressLift = null;
+
+function progressText(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+}
+
+function progressNum(n) {
+    return String(Math.round(n * 100) / 100);
+}
+
+function progressDay(day, withYear) {
+    const p = day.split('-').map(Number);
+    const opts = withYear ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' };
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', opts);
+}
+
+// The line for one lift. x is spaced by real dates, so a gap in training
+// shows as a gap. Imported weeks draw as hollow dots.
+function progressChart(points, w, h, dots) {
+    const pad = dots ? 8 : 3;
+    const t = points.map(function (pt) {
+        const p = pt.day.split('-').map(Number);
+        return Date.UTC(p[0], p[1] - 1, p[2]);
+    });
+    const t0 = t[0], span = (t[t.length - 1] - t0) || 1;
+    let lo = Infinity, hi = -Infinity;
+    points.forEach(function (pt) { lo = Math.min(lo, pt.weight); hi = Math.max(hi, pt.weight); });
+    const range = (hi - lo) || 1;
+    const xy = points.map(function (pt, i) {
+        const x = points.length === 1 ? w / 2 : pad + (w - 2 * pad) * (t[i] - t0) / span;
+        const y = hi === lo ? h / 2 : h - pad - (h - 2 * pad) * (pt.weight - lo) / range;
+        return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+    });
+    const line = xy.length > 1
+        ? '<polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' +
+          xy.map(function (p) { return p.join(','); }).join(' ') + '"/>'
+        : '';
+    const marks = (dots ? xy : xy.slice(-1)).map(function (p, i) {
+        const pt = dots ? points[i] : points[points.length - 1];
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (dots ? 3.5 : 2.5) + '" ' +
+            (pt.imported ? 'fill="var(--card-2)" stroke="currentColor" stroke-width="1.5"' : 'fill="currentColor"') + '/>';
+    }).join('');
+    return '<svg class="progress-chart" viewBox="0 0 ' + w + ' ' + h + '" width="' + (dots ? '100%' : w) + '" height="' + h +
+        '" preserveAspectRatio="none" aria-hidden="true">' + line + marks + '</svg>';
+}
+
+function renderProgress() {
+    const box = document.getElementById('progressList');
+    if (!box) return;
+    const lifts = Lifts.progress(workoutHistory);
+    if (lifts.length === 0) {
+        box.innerHTML = '<p class="progress-empty">Nothing to chart yet. Tap Complete workout at the end of a session and its weights show up here.</p>';
+        return;
+    }
+    box.innerHTML = lifts.map(function (l) {
+        const open = l.lift === openProgressLift;
+        const n = l.points.length;
+        const change = n < 2 ? 'first entry'
+            : l.change === 0 ? 'same as ' + progressDay(l.points[0].day)
+            : (l.change > 0 ? '+' : '−') + progressNum(Math.abs(l.change)) + ' since ' + progressDay(l.points[0].day);
+        const tone = n < 2 || l.change === 0 ? '' : l.change > 0 ? ' up' : ' down';
+        let detail = '';
+        if (open) {
+            const sessions = l.points.slice().reverse().map(function (pt) {
+                return '<li><span class="d">' + progressDay(pt.day, true) + (pt.imported ? ' <i>imported</i>' : '') + '</span>' +
+                    '<span class="w">' + progressText(pt.weightRaw) + '</span>' +
+                    '<span class="r">' + progressText(pt.reps || '') + '</span></li>';
+            }).join('');
+            detail = '<div class="progress-detail">' +
+                '<div class="progress-range"><span>' + progressNum(Math.max(l.best, l.last)) + '</span><span>' +
+                progressNum(Math.min.apply(null, l.points.map(function (pt) { return pt.weight; }))) + '</span></div>' +
+                progressChart(l.points, 300, 110, true) +
+                '<p class="progress-best">Best ' + progressNum(l.best) + ' on ' + progressDay(l.bestDay, true) + ' · ' + n + (n === 1 ? ' entry' : ' entries') + '</p>' +
+                '<ul class="progress-sessions">' + sessions + '</ul></div>';
+        }
+        return '<div class="progress-item' + (open ? ' open' : '') + '">' +
+            '<button type="button" class="progress-row" data-lift="' + progressText(l.lift) + '" aria-expanded="' + open + '">' +
+            '<span class="progress-name"><b>' + progressText(l.name) + '</b><small class="' + tone.trim() + '">' + change + '</small></span>' +
+            (open ? '' : '<span class="progress-spark' + tone + '">' + progressChart(l.points, 64, 26, false) + '</span>') +
+            '<span class="progress-now">' + progressNum(l.last) + '</span>' +
+            '</button>' + detail + '</div>';
+    }).join('');
+}
+
+document.getElementById('progressList').addEventListener('click', function (event) {
+    const row = event.target.closest('.progress-row');
+    if (!row) return;
+    openProgressLift = openProgressLift === row.dataset.lift ? null : row.dataset.lift;
+    renderProgress();
+});
 
 // Calendar navigation buttons
 const prevMonthBtn = document.getElementById('prevMonth');
@@ -1699,7 +1800,7 @@ function commitImport() {
     const entries = batch.map(function(b) { return Lifts.importEntry(b.fileName, b.parsed); });
     workoutHistory = Lifts.mergeImports(workoutHistory, entries);
     saveWorkoutHistory();
-    renderCalendar();
+    renderHistory();
 
     const lifts = entries.reduce(function(n, e) { return n + e.exercises.length; }, 0);
     let msg = 'Added ' + entries.length + (entries.length === 1 ? ' week' : ' weeks') +
