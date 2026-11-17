@@ -265,7 +265,65 @@
         return (history || []).filter(function (h) { return h && h.imported !== true; });
     }
 
+    // ---------- progress over time ----------
+    // One line per lift, built from every saved workout and imported week:
+    // each point is the weight on one day (the heaviest, if a lift shows up
+    // twice that day). Rows whose weight never parsed to a number are left
+    // out; their raw text is still in history. Lifts come back most recently
+    // done first.
+    //   { lift, name, points: [{ day, weight, weightRaw, reps, imported }],
+    //     first, last, best, change }      change = last weight - first weight
+    function progress(history) {
+        const byLift = {};
+        (history || []).forEach(function (h) {
+            if (!h || !Array.isArray(h.exercises)) return;
+            const when = new Date(h.date);
+            if (isNaN(when.getTime())) return;
+            const day = localDay(when);
+            h.exercises.forEach(function (e) {
+                if (!e || typeof e.weight !== 'number' || !isFinite(e.weight)) return;
+                const key = e.lift || liftKey(e.name);
+                if (!key) return;
+                const lift = byLift[key] || (byLift[key] = { lift: key, name: '', days: {} });
+                const prev = lift.days[day];
+                if (!prev || e.weight > prev.weight) {
+                    lift.days[day] = {
+                        day: day,
+                        weight: e.weight,
+                        weightRaw: e.weightRaw || String(e.weight),
+                        reps: e.reps || '',
+                        imported: h.imported === true,
+                        name: stripColors(e.name || '')
+                    };
+                }
+            });
+        });
+        return Object.keys(byLift).map(function (key) {
+            const points = Object.keys(byLift[key].days).sort().map(function (d) { return byLift[key].days[d]; });
+            const first = points[0];
+            const last = points[points.length - 1];
+            let best = first;
+            points.forEach(function (pt) { if (pt.weight > best.weight) best = pt; });
+            return {
+                lift: key,
+                name: last.name || key,
+                points: points.map(function (pt) {
+                    return { day: pt.day, weight: pt.weight, weightRaw: pt.weightRaw, reps: pt.reps, imported: pt.imported };
+                }),
+                first: first.weight,
+                last: last.weight,
+                lastDay: last.day,
+                best: best.weight,
+                bestDay: best.day,
+                change: Math.round((last.weight - first.weight) * 100) / 100
+            };
+        }).sort(function (a, b) {
+            return a.lastDay < b.lastDay ? 1 : a.lastDay > b.lastDay ? -1 : a.name.localeCompare(b.name);
+        });
+    }
+
     const Lifts = {
+        progress: progress,
         parseWeight: parseWeight,
         liftKey: liftKey,
         repsDone: repsDone,

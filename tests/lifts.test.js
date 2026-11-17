@@ -84,4 +84,31 @@ assert.strictEqual(L.exportDate('workout-data-2026-10-12.json', { workoutHistory
 assert.strictEqual(L.exportDate('workout-data-2026-10-12.json', { workoutHistory: [{ date: new Date(2026, 9, 1, 10).toISOString() }] }), '2026-10-12');
 assert.strictEqual(L.exportDate('workout-data-2026-10-12.json', { workoutHistory: [] }), '2026-10-12');
 
+// progress: one line per lift across imports and real workouts
+const at = (y, m, d) => new Date(y, m - 1, d, 12).toISOString();
+const hist = [
+  { date: at(2026, 11, 11), workout: 'upperA', exercises: [
+    { name: 'Dumbbell Incline Bench Press', lift: 'incline dumbbell press', weight: 60, weightRaw: '60', reps: '8-8-7' },
+    { name: 'Lat Pulldown', lift: 'lat pulldown', weight: 130, weightRaw: '130', reps: '10' },
+    { name: 'Lat Pulldown', lift: 'lat pulldown', weight: 120, weightRaw: '120', reps: '12' },
+    { name: 'Weird', lift: 'weird', weight: null, weightRaw: '50 or above', reps: '8' } ] },
+  { date: at(2026, 11, 3), workout: 'lowerA' },
+  { date: at(2026, 10, 27), imported: true, workout: null, exercises: [
+    { name: 'Incline Dumbbell Press', lift: 'incline dumbbell press', weight: 55, weightRaw: '55', reps: '8' },
+    { name: 'Leg Press', lift: 'leg press', weight: 125, weightRaw: '2x 45 1x 35 per side', reps: '10' } ] },
+  { date: at(2026, 11, 4), workout: 'upperB', exercises: [
+    { name: 'Incline Dumbbell Press', lift: 'incline dumbbell press', weight: 62.5, weightRaw: '62.5', reps: '6' } ] },
+];
+const prog = L.progress(hist);
+assert.deepStrictEqual(prog.map(x => x.lift), ['incline dumbbell press', 'lat pulldown', 'leg press'], 'newest first, unparsed left out');
+const inc = prog[0];
+assert.deepStrictEqual(inc.points.map(x => [x.day, x.weight, x.imported]), [['2026-10-27', 55, true], ['2026-11-04', 62.5, false], ['2026-11-11', 60, false]]);
+assert.strictEqual(inc.name, 'Dumbbell Incline Bench Press', 'the two names are one lift; the latest name shows');
+assert.deepStrictEqual([inc.first, inc.last, inc.best, inc.bestDay, inc.change], [55, 60, 62.5, '2026-11-04', 5]);
+assert.strictEqual(prog[1].points.length, 1, 'twice in one day keeps the heavier');
+assert.strictEqual(prog[1].last, 130);
+assert.strictEqual(prog[2].points[0].weightRaw, '2x 45 1x 35 per side');
+assert.deepStrictEqual(L.progress([]), []);
+assert.deepStrictEqual(L.progress(null), []);
+
 console.log('all lifts tests passed');
