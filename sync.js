@@ -49,6 +49,17 @@
         if (sessionStorage.getItem('embed') === '1') document.documentElement.classList.add('embed');
     } catch (e) { /* storage blocked: the page still works, just with normal spacing */ }
 
+    // Inside the hub, Cmd-K (Ctrl-K off a Mac) opens the hub's command box.
+    // Keys pressed in this frame never reach the hub's page, so pass the press
+    // on as a message. It carries nothing but its type.
+    if (window.parent !== window) {
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+            e.preventDefault();
+            window.parent.postMessage({ type: 'lifeos:command' }, '*');
+        }, true);
+    }
+
     // ---------- bookkeeping kept on this device ----------
     // { user: <id>, pulled: <bool>, keys: { workoutData: { v: 7, dirty: false }, ... } }
     //   v      the server version this device last saw (0 = never on the server)
