@@ -265,6 +265,33 @@
         return (history || []).filter(function (h) { return h && h.imported !== true; });
     }
 
+    // ---------- reading reps ----------
+    // "8-8-7" -> [8, 8, 7]; "10" -> [10]; anything without digits -> [].
+    function repsList(text) {
+        return (String(text || '').match(/\d+/g) || []).map(Number).filter(function (n) { return n > 0 && n < 200; });
+    }
+
+    // How many reps short of the target the last session was, over all sets.
+    // The target is the biggest number in the "max reps" text ("8", "8-10").
+    // reps "8-8-7" against target 8 -> 1. 0 means every set hit it.
+    // null when either side has no numbers.
+    function repsShort(reps, maxReps) {
+        const done = repsList(reps);
+        const target = Math.max.apply(null, repsList(maxReps).concat(repsList(reps)));
+        if (!done.length || !isFinite(target)) return null;
+        return done.reduce(function (sum, r) { return sum + Math.max(0, target - r); }, 0);
+    }
+
+    // Which part of the list a lift shows under. Core is told from the name
+    // (the app has no muscle tags); otherwise the workout day it was done on.
+    const CORE = /crunch|woodchop|knee raise|leg raise|plank|sit ?up|russian twist|roll ?out|\bab\b|\babs\b|oblique|pallof/i;
+    function groupOf(name, workout) {
+        if (CORE.test(name || '')) return 'core';
+        if (/^upper/i.test(workout || '')) return 'upper';
+        if (/^lower/i.test(workout || '')) return 'lower';
+        return 'other';
+    }
+
     // ---------- progress over time ----------
     // One line per lift, built from every saved workout and imported week:
     // each point is the weight on one day (the heaviest, if a lift shows up
@@ -292,6 +319,8 @@
                         weight: e.weight,
                         weightRaw: e.weightRaw || String(e.weight),
                         reps: e.reps || '',
+                        maxReps: e.maxReps || '',
+                        workout: e.day || h.workout || '',
                         imported: h.imported === true,
                         name: stripColors(e.name || '')
                     };
@@ -304,11 +333,24 @@
             const last = points[points.length - 1];
             let best = first;
             points.forEach(function (pt) { if (pt.weight > best.weight) best = pt; });
+            // how many sessions in a row (ending with the latest) sat at the latest weight
+            let held = 0;
+            for (let i = points.length - 1; i >= 0 && points[i].weight === last.weight; i--) held++;
+            const short = repsShort(last.reps, last.maxReps);
             return {
                 lift: key,
                 name: last.name || key,
+                group: groupOf(last.name || key, last.workout),
+                // 'new' one entry · 'slipping' below its best · 'up' above where it started · 'holding' otherwise
+                status: points.length < 2 ? 'new' : last.weight < best.weight ? 'slipping' : last.weight > first.weight ? 'up' : 'holding',
+                held: held,
+                lastReps: last.reps,
+                // reps still missing to hit the target on every set (null when the reps can't be read)
+                repsShort: short,
+                // same weight 3+ sessions and every set at the target: time to add weight
+                bump: held >= 3 && short === 0,
                 points: points.map(function (pt) {
-                    return { day: pt.day, weight: pt.weight, weightRaw: pt.weightRaw, reps: pt.reps, imported: pt.imported };
+                    return { day: pt.day, weight: pt.weight, weightRaw: pt.weightRaw, reps: pt.reps, imported: pt.imported, workout: pt.workout };
                 }),
                 first: first.weight,
                 last: last.weight,
@@ -324,6 +366,9 @@
 
     const Lifts = {
         progress: progress,
+        repsList: repsList,
+        repsShort: repsShort,
+        groupOf: groupOf,
         parseWeight: parseWeight,
         liftKey: liftKey,
         repsDone: repsDone,
