@@ -111,4 +111,21 @@ assert.strictEqual(prog[2].points[0].weightRaw, '2x 45 1x 35 per side');
 assert.deepStrictEqual(L.progress([]), []);
 assert.deepStrictEqual(L.progress(null), []);
 
+// reps, groups, status and the "time to add weight" rule
+assert.deepStrictEqual(L.repsList('8-8-7'), [8, 8, 7]);
+assert.strictEqual(L.repsShort('8-8-7', '8'), 1);
+assert.strictEqual(L.repsShort('8', '8'), 0);
+assert.strictEqual(L.repsShort('5-5-4', '5-5-4'), 1, 'the pattern itself is the target');
+assert.strictEqual(L.repsShort('', '8'), null);
+assert.strictEqual(L.groupOf('Cable Rope Crunches', 'upperA'), 'core');
+assert.strictEqual(L.groupOf('Leg Press', 'lowerB'), 'lower');
+assert.strictEqual(L.groupOf('Mystery', ''), 'other');
+assert.strictEqual(inc.status, 'slipping', '60 after a 62.5 best');
+assert.strictEqual(prog[1].status, 'new');
+const flat = d => ({ date: at(2026, 11, d), workout: 'upperA', exercises: [{ name: 'Row', lift: 'row', day: 'upperA', weight: 100, weightRaw: '100', reps: d === 15 ? '8-8-8' : '8-8-7', maxReps: '8' }] });
+let row = L.progress([flat(1), flat(8), flat(15)])[0];
+assert.deepStrictEqual([row.status, row.held, row.repsShort, row.bump, row.group], ['holding', 3, 0, true, 'upper']);
+row = L.progress([flat(1), flat(8)])[0];
+assert.deepStrictEqual([row.held, row.repsShort, row.bump], [2, 1, false]);
+
 console.log('all lifts tests passed');

@@ -27,11 +27,21 @@
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1s1 2.2 1 3.5c0 .9-.4 1.5-.4 1.5S10.8 5.6 11.5 4c1.6 1.6 2.5 3.4 2.5 5.3 0 3.2-2.7 5.7-6 5.7s-6-2.5-6-5.7C2 5.9 5.4 3.2 8 1z"/></svg>
                 <span id="streakChipVal">0 wk</span>
             </span>
+            <button id="showSettings" class="btn-icon" aria-label="Settings: weekly split, export, import"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></button>
             <button id="darkModeToggle" class="btn-icon" aria-label="Toggle light/dark theme"></button>
         </div>
     </header>
 
     <main>
+        <!-- VIEWS: Train (today's workout), Progress (every lift over time),
+             History (calendar + what you did each day). script.js showView(). -->
+        <nav class="views" aria-label="Sections">
+            <button class="view-btn active" data-view="train" aria-pressed="true">Train</button>
+            <button class="view-btn" data-view="progress" aria-pressed="false">Progress</button>
+            <button class="view-btn" data-view="history" aria-pressed="false">History</button>
+        </nav>
+
+        <div id="view-train" class="view active">
         <!-- TABS: one per workout day; the brass underline marks the active one,
              a moss check (via CSS ::after on .completed) marks finished days -->
         <div class="tabs">
@@ -75,10 +85,67 @@
             <button class="btn-complete-workout" data-day="lowerB"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Complete Lower B</button>
         </section>
 
-        <!-- FLOATING BUTTONS: history (bottom left) and add exercise (bottom right) -->
-        <button id="showHistoryModal" class="btn-float btn-float-history" aria-label="Workout history">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5V4M10.5 1.5V4"/></svg>
-        </button>
+        </div>
+
+        <!-- PROGRESS VIEW: counts, filters, the lifts in groups, and one lift's
+             chart. On a phone the chart replaces the list; on a wide screen
+             they sit side by side. Filled by renderProgress(). -->
+        <div id="view-progress" class="view">
+            <div class="pg-wrap">
+                <div class="pg-list">
+                    <div id="pgTiles" class="stat-tiles three"></div>
+                    <input type="search" id="pgSearch" class="sheet-input" placeholder="Find a lift" aria-label="Find a lift">
+                    <div id="pgFilters" class="pg-filters"></div>
+                    <div id="progressList"></div>
+                </div>
+                <div id="pgDetail" class="pg-detail"></div>
+            </div>
+        </div>
+
+        <!-- HISTORY VIEW: streak tiles, the month, and the session for the day you tap. -->
+        <div id="view-history" class="view">
+            <div class="hs-wrap">
+                <div class="hs-left">
+                <div class="stat-tiles three">
+                    <div class="stat-tile">
+                        <div class="l"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1s1 2.2 1 3.5c0 .9-.4 1.5-.4 1.5S10.8 5.6 11.5 4c1.6 1.6 2.5 3.4 2.5 5.3 0 3.2-2.7 5.7-6 5.7s-6-2.5-6-5.7C2 5.9 5.4 3.2 8 1z"/></svg>Streak</div>
+                        <div class="v" id="streakCount">0</div>
+                        <div class="s" id="streakUnit">full weeks</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="l">This month</div>
+                        <div class="v" id="monthCount">0</div>
+                        <div class="s" id="monthUnit">workouts</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="l">This week</div>
+                        <div class="v" id="weekCount">0 of 4</div>
+                        <div class="s">done</div>
+                    </div>
+                </div>
+
+                    <div class="cal-card">
+                <div class="calendar-controls">
+                    <button id="prevMonth" class="btn-calendar-nav" aria-label="Previous month"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+                    <h3 id="currentMonth" class="calendar-month-title">July 2026</h3>
+                    <button id="nextMonth" class="btn-calendar-nav" aria-label="Next month"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
+                </div>
+
+                <div id="calendarGrid" class="calendar-grid">
+                    <!-- Calendar is generated by script.js -->
+                </div>
+                        <div class="cal-legend"><span><i class="dot upper"></i>Upper</span><span><i class="dot lower"></i>Lower</span></div>
+                    </div>
+                </div>
+                <div class="hs-right">
+                    <div id="hsSession"></div>
+                    <label class="f-label">Recent sessions</label>
+                    <div id="hsRecent" class="progress-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FLOATING BUTTON: add exercise (Train view only) -->
         <button id="showAddModal" class="btn-float" aria-label="Add exercise">
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
         </button>
@@ -181,39 +248,13 @@
             </div>
         </div>
 
-        <!-- HISTORY SHEET: streak/month tiles + calendar + backup actions -->
+        <!-- SETTINGS SHEET (the gear): weekly split + backup actions. The streak
+             tiles, calendar and progress moved to their own views. -->
         <div id="historyModal" class="modal">
             <div class="sheet">
                 <div class="sheet-grab"></div>
-                <h2>History</h2>
+                <h2>Settings</h2>
 
-                <div class="stat-tiles">
-                    <div class="stat-tile">
-                        <div class="l"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1s1 2.2 1 3.5c0 .9-.4 1.5-.4 1.5S10.8 5.6 11.5 4c1.6 1.6 2.5 3.4 2.5 5.3 0 3.2-2.7 5.7-6 5.7s-6-2.5-6-5.7C2 5.9 5.4 3.2 8 1z"/></svg>Streak</div>
-                        <div class="v" id="streakCount">0 weeks</div>
-                    </div>
-                    <div class="stat-tile">
-                        <div class="l">This month</div>
-                        <div class="v" id="monthCount">0 workouts</div>
-                    </div>
-                </div>
-
-                <div class="calendar-controls">
-                    <button id="prevMonth" class="btn-calendar-nav" aria-label="Previous month"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
-                    <h3 id="currentMonth" class="calendar-month-title">July 2026</h3>
-                    <button id="nextMonth" class="btn-calendar-nav" aria-label="Next month"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
-                </div>
-
-                <div id="calendarGrid" class="calendar-grid">
-                    <!-- Calendar is generated by script.js -->
-                </div>
-
-                <!-- PROGRESS: weight over time per lift, from finished workouts
-                     and imported weeks. Filled in by renderProgress() in script.js. -->
-                <div class="field progress-field">
-                    <label class="f-label">Progress</label>
-                    <div id="progressList" class="progress-list"></div>
-                </div>
 
                 <!-- WEEKLY SPLIT: 4-day does all four workouts per week;
                      2-day does one upper + one lower, alternating A/B by completion -->

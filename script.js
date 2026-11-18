@@ -456,6 +456,31 @@ function statTile(label, value, note) {
 }
 
 // build one exercise card element (used for solo cards and alternative groups)
+// The "last time" line at the bottom of a card: last weight and reps from
+// history, a small line of every session, and how it moved. Tapping it opens
+// the lift in Progress. Cached per history so 30 cards share one pass.
+let cardTrendCache = { history: null, size: -1, map: null };
+function cardTrendFor(name) {
+    if (cardTrendCache.history !== workoutHistory || cardTrendCache.size !== workoutHistory.length) {
+        const map = {};
+        Lifts.progress(workoutHistory).forEach(function (l) { map[l.lift] = l; });
+        cardTrendCache = { history: workoutHistory, size: workoutHistory.length, map: map };
+    }
+    return cardTrendCache.map[Lifts.liftKey(name)] || null;
+}
+
+function cardTrend(name) {
+    const l = cardTrendFor(name);
+    if (!l) return '';
+    const d = progressDelta(l);
+    const last = progressNum(l.last) + (l.lastReps ? ' × ' + l.lastReps : '');
+    const when = progressDay(l.lastDay);
+    return '<button type="button" class="card-trend" data-lift="' + progressText(l.lift) + '" aria-label="Open ' + progressText(l.name) + ' in Progress">' +
+        '<span class="t-l">Last · ' + when + '</span><span class="t-v">' + progressText(last) + '</span>' +
+        (l.points.length > 1 ? '<span class="progress-spark ' + d.tone + '">' + progressChart(l.points, 52, 20, false).svg + '</span>' : '') +
+        '<span class="t-d ' + d.tone + '">' + (l.bump ? 'add weight' : d.text) + '</span></button>';
+}
+
 function createExerciseCard(day, exercise, index, isUpNext, pairedDay) {
     const exerciseCard = document.createElement('div');
     exerciseCard.classList.add('exercise-card');
@@ -507,6 +532,7 @@ function createExerciseCard(day, exercise, index, isUpNext, pairedDay) {
                 ${statTile('Rest', exercise.rest)}
             </div>
             ${metaRows ? `<div class="card-meta">${metaRows}</div>` : ''}
+            ${cardTrend(exercise.name)}
             <div class="card-actions">
                 <button class="icon-btn btn-quick-edit log" data-day="${day}" data-index="${index}" aria-label="Quick log weight and reps">${ICONS.bolt}</button>
                 <button class="icon-btn btn-edit" data-day="${day}" data-index="${index}" aria-label="Edit exercise">${ICONS.pencil}</button>
@@ -1203,6 +1229,13 @@ function calculateMonthWorkouts() {
 // Calendar state
 let currentCalendarMonth = new Date().getMonth();
 let currentCalendarYear = new Date().getFullYear();
+// Redesign state: which view is open, the open lift, filters, the picked day.
+let currentView = 'train';
+let openProgressLift = null;
+let progressFilter = 'all';
+let progressRange = 'all';
+const WIDE = window.matchMedia('(min-width: 960px)');
+let selectedHistoryDay = null;   // 'YYYY-MM-DD' (local)
 
 // Render calendar
 function renderCalendar() {
@@ -1215,8 +1248,10 @@ function renderCalendar() {
     const streak = calculateStreak();
     const monthWorkouts = calculateMonthWorkouts();
 
-    streakCount.textContent = streak + (streak === 1 ? ' week' : ' weeks');
-    monthCount.textContent = monthWorkouts + (monthWorkouts === 1 ? ' workout' : ' workouts');
+    streakCount.textContent = streak;
+    monthCount.textContent = monthWorkouts;
+    document.getElementById('streakUnit').textContent = streak === 1 ? 'full week' : 'full weeks';
+    document.getElementById('monthUnit').textContent = monthWorkouts === 1 ? 'workout' : 'workouts';
 
     // Update month title
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -1258,29 +1293,30 @@ function renderCalendar() {
     const todayMonth = today.getMonth();
     const todayYear = today.getFullYear();
 
-    // Add current month's days
+    // Add current month's days. Each is a button: tap one to see that day's
+    // session. A dot marks a finished workout (blue upper, green lower).
+    const real = Lifts.realWorkouts(workoutHistory);
+    const pad = function (n) { return (n < 10 ? '0' : '') + n; };
     for (let day = 1; day <= daysInMonth; day++) {
-        const dayDiv = document.createElement('div');
+        const dayDiv = document.createElement('button');
+        dayDiv.type = 'button';
         dayDiv.className = 'calendar-day';
+        const key = currentCalendarYear + '-' + pad(currentCalendarMonth + 1) + '-' + pad(day);
+        dayDiv.dataset.day = key;
         dayDiv.textContent = day;
 
-        // Check if this is today
-        if (day === todayDate &&
-            currentCalendarMonth === todayMonth &&
-            currentCalendarYear === todayYear) {
+        if (day === todayDate && currentCalendarMonth === todayMonth && currentCalendarYear === todayYear) {
             dayDiv.classList.add('today');
         }
+        if (key === selectedHistoryDay) dayDiv.classList.add('selected');
 
-        // Check if there's a workout on this day
-        const hasWorkout = Lifts.realWorkouts(workoutHistory).some(entry => {
-            const entryDate = new Date(entry.date);
-            return entryDate.getDate() === day &&
-                   entryDate.getMonth() === currentCalendarMonth &&
-                   entryDate.getFullYear() === currentCalendarYear;
-        });
-
-        if (hasWorkout) {
+        const entries = real.filter(function (entry) { return localDayOf(entry.date) === key; });
+        if (entries.length) {
             dayDiv.classList.add('has-workout');
+            const dot = document.createElement('i');
+            dot.className = 'dot ' + sessionKind(entries[0].workout);
+            dayDiv.appendChild(dot);
+            dayDiv.setAttribute('aria-label', key + ', ' + entries.map(function (e) { return dayNames[e.workout] || 'workout'; }).join(', '));
         }
 
         calendarGrid.appendChild(dayDiv);
@@ -1297,20 +1333,49 @@ function renderCalendar() {
     }
 }
 
-// Rename old renderHistory to keep compatibility
 function renderHistory() {
     renderCalendar();
+    renderSession();
     renderProgress();
 }
 
 // ============================================================
-// PROGRESS (weight over time per lift)
+// VIEWS (Train / Progress / History)
 // ============================================================
-// Built from workoutHistory by Lifts.progress: one row per lift with the
-// latest weight, the change since the first saved one and a small line.
-// Tap a row to open a bigger chart and the list of sessions.
 
-let openProgressLift = null;
+function showView(name) {
+    currentView = name;
+    try { sessionStorage.setItem('view', name); } catch (e) { /* storage blocked */ }
+    document.body.dataset.view = name;
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
+    document.querySelectorAll('.view-btn').forEach(function (b) {
+        const on = b.dataset.view === name;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+    });
+    if (name === 'train') {
+        const tab = document.querySelector('.tab-btn.active');
+        if (tab) updateHeader(tab.id.replace('tab-', ''));
+    } else {
+        document.getElementById('dayTitle').textContent = name === 'progress' ? 'Progress' : 'History';
+        renderHistory();
+    }
+    window.scrollTo(0, 0);
+}
+
+document.querySelector('.views').addEventListener('click', function (event) {
+    const btn = event.target.closest('.view-btn');
+    if (btn) { openProgressLift = null; showView(btn.dataset.view); }
+});
+
+// ============================================================
+// PROGRESS (every lift over time)
+// ============================================================
+// Built from workoutHistory by Lifts.progress. Three counts on top, filters,
+// then the lifts in groups: ready to add weight, going up, holding, slipping.
+// Tapping a lift opens its chart: on a phone it replaces the list, on a wide
+// screen it sits beside it.
+
 
 function progressText(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
@@ -1328,14 +1393,17 @@ function progressDay(day, withYear) {
     return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', opts);
 }
 
+function dayStamp(day) {
+    const p = day.split('-').map(Number);
+    return Date.UTC(p[0], p[1] - 1, p[2]);
+}
+
 // The line for one lift. x is spaced by real dates, so a gap in training
-// shows as a gap. Imported weeks draw as hollow dots.
-function progressChart(points, w, h, dots) {
-    const pad = dots ? 8 : 3;
-    const t = points.map(function (pt) {
-        const p = pt.day.split('-').map(Number);
-        return Date.UTC(p[0], p[1] - 1, p[2]);
-    });
+// shows as a gap. Imported weeks draw as hollow dots. `big` adds grid lines,
+// a soft fill and a dot per session.
+function progressChart(points, w, h, big) {
+    const pad = big ? 12 : 3;
+    const t = points.map(function (pt) { return dayStamp(pt.day); });
     const t0 = t[0], span = (t[t.length - 1] - t0) || 1;
     let lo = Infinity, hi = -Infinity;
     points.forEach(function (pt) { lo = Math.min(lo, pt.weight); hi = Math.max(hi, pt.weight); });
@@ -1345,62 +1413,258 @@ function progressChart(points, w, h, dots) {
         const y = hi === lo ? h / 2 : h - pad - (h - 2 * pad) * (pt.weight - lo) / range;
         return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
     });
-    const line = xy.length > 1
-        ? '<polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' +
-          xy.map(function (p) { return p.join(','); }).join(' ') + '"/>'
-        : '';
-    const marks = (dots ? xy : xy.slice(-1)).map(function (p, i) {
-        const pt = dots ? points[i] : points[points.length - 1];
-        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (dots ? 3.5 : 2.5) + '" ' +
-            (pt.imported ? 'fill="var(--card-2)" stroke="currentColor" stroke-width="1.5"' : 'fill="currentColor"') + '/>';
-    }).join('');
-    return '<svg class="progress-chart" viewBox="0 0 ' + w + ' ' + h + '" width="' + (dots ? '100%' : w) + '" height="' + h +
-        '" preserveAspectRatio="none" aria-hidden="true">' + line + marks + '</svg>';
+    const path = xy.map(function (p) { return p.join(','); }).join(' ');
+    let out = '';
+    if (big) {
+        [pad, h / 2, h - pad].forEach(function (y) {
+            out += '<line x1="0" x2="' + w + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+        });
+        if (xy.length > 1) {
+            out += '<polygon fill="var(--brass-soft)" points="' + path + ' ' + xy[xy.length - 1][0] + ',' + h + ' ' + xy[0][0] + ',' + h + '"/>';
+        }
+    }
+    if (xy.length > 1) {
+        out += '<polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" points="' + path + '"/>';
+    }
+    return { svg: '<svg class="progress-chart" viewBox="0 0 ' + w + ' ' + h + '" ' + (big ? 'preserveAspectRatio="none"' : 'width="' + w + '"') + ' height="' + h + '" aria-hidden="true">' + out +
+        (big ? '' : '<circle cx="' + xy[xy.length - 1][0] + '" cy="' + xy[xy.length - 1][1] + '" r="2.5" fill="currentColor"/>') + '</svg>',
+        xy: xy, lo: lo, hi: hi };
+}
+
+function progressDelta(l) {
+    if (l.points.length < 2) return { text: 'first entry', tone: '' };
+    if (l.status === 'slipping') return { text: '−' + progressNum(l.best - l.last) + ' from best', tone: 'down' };
+    if (l.change === 0) return { text: 'same', tone: '' };
+    return { text: (l.change > 0 ? '+' : '−') + progressNum(Math.abs(l.change)), tone: l.change > 0 ? 'up' : 'down' };
+}
+
+function progressSub(l) {
+    const where = { upper: 'Upper', lower: 'Lower', core: 'Core', other: '' }[l.group];
+    const reps = l.lastReps ? progressNum(l.last) + ' × ' + l.lastReps : progressDay(l.lastDay);
+    return (where ? where + ' · ' : '') + reps;
+}
+
+function progressRow(l) {
+    const d = progressDelta(l);
+    return '<button type="button" class="progress-row' + (l.lift === openProgressLift ? ' sel' : '') + '" data-lift="' + progressText(l.lift) + '">' +
+        '<span class="progress-name"><b>' + progressText(l.name) + '</b><small>' + progressText(progressSub(l)) + '</small></span>' +
+        '<span class="progress-spark ' + d.tone + '">' + progressChart(l.points, 64, 26, false).svg + '</span>' +
+        '<span class="progress-now"><b>' + progressNum(l.last) + '</b><small class="' + d.tone + '">' + d.text + '</small></span></button>';
+}
+
+function progressGroup(title, list, note) {
+    if (!list.length) return '';
+    return '<label class="f-label pg-label">' + title + (note ? '<span>' + note + '</span>' : '') + '</label>' +
+        '<div class="progress-list">' + list.map(progressRow).join('') + '</div>';
+}
+
+function progressLifts() {
+    return Lifts.progress(workoutHistory);
 }
 
 function renderProgress() {
     const box = document.getElementById('progressList');
     if (!box) return;
-    const lifts = Lifts.progress(workoutHistory);
-    if (lifts.length === 0) {
+    const all = progressLifts();
+    const tiles = document.getElementById('pgTiles');
+    const filters = document.getElementById('pgFilters');
+    const search = document.getElementById('pgSearch');
+    const empty = all.length === 0;
+    tiles.hidden = filters.hidden = search.hidden = empty;
+    if (empty) {
         box.innerHTML = '<p class="progress-empty">Nothing to chart yet. Tap Complete workout at the end of a session and its weights show up here.</p>';
+        document.getElementById('pgDetail').innerHTML = '';
+        document.body.classList.remove('pg-open');
         return;
     }
-    box.innerHTML = lifts.map(function (l) {
-        const open = l.lift === openProgressLift;
-        const n = l.points.length;
-        const change = n < 2 ? 'first entry'
-            : l.change === 0 ? 'same as ' + progressDay(l.points[0].day)
-            : (l.change > 0 ? '+' : '−') + progressNum(Math.abs(l.change)) + ' since ' + progressDay(l.points[0].day);
-        const tone = n < 2 || l.change === 0 ? '' : l.change > 0 ? ' up' : ' down';
-        let detail = '';
-        if (open) {
-            const sessions = l.points.slice().reverse().map(function (pt) {
-                return '<li><span class="d">' + progressDay(pt.day, true) + (pt.imported ? ' <i>imported</i>' : '') + '</span>' +
-                    '<span class="w">' + progressText(pt.weightRaw) + '</span>' +
-                    '<span class="r">' + progressText(pt.reps || '') + '</span></li>';
-            }).join('');
-            detail = '<div class="progress-detail">' +
-                '<div class="progress-range"><span>' + progressNum(Math.max(l.best, l.last)) + '</span><span>' +
-                progressNum(Math.min.apply(null, l.points.map(function (pt) { return pt.weight; }))) + '</span></div>' +
-                progressChart(l.points, 300, 110, true) +
-                '<p class="progress-best">Best ' + progressNum(l.best) + ' on ' + progressDay(l.bestDay, true) + ' · ' + n + (n === 1 ? ' entry' : ' entries') + '</p>' +
-                '<ul class="progress-sessions">' + sessions + '</ul></div>';
-        }
-        return '<div class="progress-item' + (open ? ' open' : '') + '">' +
-            '<button type="button" class="progress-row" data-lift="' + progressText(l.lift) + '" aria-expanded="' + open + '">' +
-            '<span class="progress-name"><b>' + progressText(l.name) + '</b><small class="' + tone.trim() + '">' + change + '</small></span>' +
-            (open ? '' : '<span class="progress-spark' + tone + '">' + progressChart(l.points, 64, 26, false) + '</span>') +
-            '<span class="progress-now">' + progressNum(l.last) + '</span>' +
-            '</button>' + detail + '</div>';
+
+    const count = function (status) { return all.filter(function (l) { return l.status === status; }).length; };
+    const since = all.reduce(function (min, l) { return l.points[0].day < min ? l.points[0].day : min; }, all[0].points[0].day);
+    tiles.innerHTML =
+        '<div class="stat-tile"><div class="l">Going up</div><div class="v up">' + count('up') + '</div><div class="s">of ' + all.length + ' lifts</div></div>' +
+        '<div class="stat-tile"><div class="l">Holding</div><div class="v">' + count('holding') + '</div><div class="s">same weight</div></div>' +
+        '<div class="stat-tile"><div class="l">Slipping</div><div class="v' + (count('slipping') ? ' down' : '') + '">' + count('slipping') + '</div><div class="s">below best</div></div>';
+
+    const groups = ['upper', 'lower', 'core', 'other'].filter(function (g) { return all.some(function (l) { return l.group === g; }); });
+    if (progressFilter !== 'all' && groups.indexOf(progressFilter) < 0) progressFilter = 'all';
+    filters.innerHTML = ['all'].concat(groups).map(function (g) {
+        const n = g === 'all' ? all.length : all.filter(function (l) { return l.group === g; }).length;
+        const on = g === progressFilter;
+        return '<button type="button" class="pg-chip' + (on ? ' on' : '') + '" data-filter="' + g + '" aria-pressed="' + on + '">' +
+            { all: 'All', upper: 'Upper', lower: 'Lower', core: 'Core', other: 'Other' }[g] + ' ' + n + '</button>';
     }).join('');
+
+    const q = search.value.trim().toLowerCase();
+    const shown = all.filter(function (l) {
+        return (progressFilter === 'all' || l.group === progressFilter) && (!q || l.name.toLowerCase().indexOf(q) >= 0);
+    });
+    const by = function (test, sort) { return shown.filter(test).sort(sort || function () { return 0; }); };
+    const gain = function (a, b) { return b.change - a.change; };
+    const html =
+        progressGroup('Time to add weight', by(function (l) { return l.bump; }), '3+ sessions, every set hit') +
+        progressGroup('Going up', by(function (l) { return l.status === 'up' && !l.bump; }, gain), 'now · since ' + progressDay(since)) +
+        progressGroup('Holding', by(function (l) { return (l.status === 'holding' || l.status === 'new') && !l.bump; })) +
+        progressGroup('Slipping', by(function (l) { return l.status === 'slipping' && !l.bump; }), 'below your best');
+    box.innerHTML = html || '<p class="progress-empty">No lifts match.</p>';
+
+    // wide screens always show a chart beside the list
+    if (WIDE.matches && !all.some(function (l) { return l.lift === openProgressLift; })) {
+        const firstRow = box.querySelector('.progress-row');
+        openProgressLift = firstRow ? firstRow.dataset.lift : all[0].lift;
+        box.querySelectorAll('.progress-row').forEach(function (r) { r.classList.toggle('sel', r.dataset.lift === openProgressLift); });
+    }
+    renderProgressDetail(all);
 }
 
-document.getElementById('progressList').addEventListener('click', function (event) {
+function renderProgressDetail(all) {
+    const box = document.getElementById('pgDetail');
+    const l = (all || progressLifts()).find(function (x) { return x.lift === openProgressLift; });
+    document.body.classList.toggle('pg-open', !!l);
+    if (!l) { box.innerHTML = ''; return; }
+
+    const cut = { '3m': 92, '6m': 183, '1y': 366 }[progressRange];
+    const lastT = dayStamp(l.lastDay);
+    let pts = cut ? l.points.filter(function (pt) { return lastT - dayStamp(pt.day) <= cut * 86400000; }) : l.points;
+    if (!pts.length) pts = l.points;
+    const chart = progressChart(pts, 320, 170, true);
+    const dots = chart.xy.map(function (p, i) {
+        return '<i class="' + (pts[i].imported ? 'hollow' : '') + '" style="left:' + (p[0] / 320 * 100) + '%;top:' + (p[1] / 170 * 100) + '%"></i>';
+    }).join('');
+    const pct = l.first ? Math.round(l.change / l.first * 100) : 0;
+    const d = progressDelta(l);
+
+    let note = '';
+    if (l.bump) note = 'Same weight for ' + l.held + ' sessions and every set hit the target. Time to add weight.';
+    else if (l.status === 'slipping') note = 'Your best was ' + progressNum(l.best) + ' on ' + progressDay(l.bestDay, true) + '.';
+    else if (l.repsShort > 0) {
+        // the goal is the target on every set: rebuild it from what was done plus what is missing
+        const done = Lifts.repsList(l.lastReps);
+        const target = Math.round((l.repsShort + done.reduce(function (a, b) { return a + b; }, 0)) / done.length);
+        note = 'Reps at ' + progressNum(l.last) + ' were ' + l.lastReps + '. Hit ' + done.map(function () { return target; }).join('-') + ' and it is time to add weight.';
+    }
+    else if (l.repsShort === 0 && l.held < 3 && l.points.length > 1) note = 'Every set hit the target at ' + progressNum(l.last) + '. ' + (3 - l.held) + ' more like that and it is time to add weight.';
+
+    const sessions = l.points.slice().reverse().map(function (pt, i, arr) {
+        const prev = arr[i + 1];
+        const diff = prev ? pt.weight - prev.weight : 0;
+        return '<li><span class="d">' + progressDay(pt.day, true) + (pt.imported ? ' <i>imported</i>' : '') + '</span>' +
+            '<span class="w">' + progressText(pt.weightRaw) + '</span>' +
+            '<span class="r">' + progressText(pt.reps || '') + '</span>' +
+            '<span class="c ' + (diff > 0 ? 'up' : diff < 0 ? 'down' : '') + '">' + (diff ? (diff > 0 ? '+' : '−') + progressNum(Math.abs(diff)) : '') + '</span></li>';
+    }).join('');
+
+    box.innerHTML =
+        '<button type="button" class="pg-back" data-act="back">' + ICONS.chevron + 'Progress</button>' +
+        '<div class="pg-head"><div><h2>' + progressText(l.name) + '</h2><p>' + { upper: 'Upper', lower: 'Lower', core: 'Core', other: '' }[l.group] + (l.points.length > 1 ? ' · ' + l.points.length + ' entries' : ' · 1 entry') + '</p></div>' +
+        '<div class="pg-ranges">' + [['3m', '3M'], ['6m', '6M'], ['1y', '1Y'], ['all', 'All']].map(function (r) {
+            return '<button type="button" data-range="' + r[0] + '" class="' + (r[0] === progressRange ? 'on' : '') + '" aria-pressed="' + (r[0] === progressRange) + '">' + r[1] + '</button>';
+        }).join('') + '</div></div>' +
+        '<div class="stat-tiles three">' +
+        '<div class="stat-tile"><div class="l">Now</div><div class="v">' + progressNum(l.last) + '</div><div class="s">' + progressText(l.lastReps ? '× ' + l.lastReps : progressDay(l.lastDay)) + '</div></div>' +
+        '<div class="stat-tile"><div class="l">Best</div><div class="v">' + progressNum(l.best) + '</div><div class="s">' + progressDay(l.bestDay) + '</div></div>' +
+        '<div class="stat-tile"><div class="l">Since ' + progressDay(l.points[0].day) + '</div><div class="v ' + (l.change > 0 ? 'up' : l.change < 0 ? 'down' : '') + '">' + (l.change > 0 ? '+' : l.change < 0 ? '−' : '') + progressNum(Math.abs(l.change)) + '</div><div class="s">' + (l.change ? (pct > 0 ? '+' : '') + pct + '%' : d.text) + '</div></div>' +
+        '</div>' +
+        '<div class="pg-chart" role="img" aria-label="' + progressText(l.name) + ' weight over time, from ' + progressNum(pts[0].weight) + ' to ' + progressNum(pts[pts.length - 1].weight) + '">' +
+        '<div class="pg-plot">' + chart.svg + dots + '<span class="hi">' + progressNum(chart.hi) + '</span>' + (chart.hi !== chart.lo ? '<span class="lo">' + progressNum(chart.lo) + '</span>' : '') + '</div>' +
+        '<div class="pg-axis"><span>' + progressDay(pts[0].day, true) + '</span><span>' + (pts.length > 1 ? progressDay(pts[pts.length - 1].day, true) : '') + '</span></div></div>' +
+        (note ? '<p class="pg-note' + (l.bump ? ' go' : '') + '">' + progressText(note) + '</p>' : '') +
+        '<label class="f-label pg-label">Sessions<span>weight · reps · change</span></label>' +
+        '<ul class="progress-sessions progress-list">' + sessions + '</ul>';
+}
+
+function openLift(lift) {
+    openProgressLift = lift;
+    if (currentView !== 'progress') showView('progress'); else renderProgress();
+    if (!WIDE.matches) window.scrollTo(0, 0);
+}
+
+document.getElementById('view-progress').addEventListener('click', function (event) {
     const row = event.target.closest('.progress-row');
-    if (!row) return;
-    openProgressLift = openProgressLift === row.dataset.lift ? null : row.dataset.lift;
-    renderProgress();
+    if (row) { openLift(row.dataset.lift); return; }
+    const chip = event.target.closest('.pg-chip');
+    if (chip) { progressFilter = chip.dataset.filter; if (!WIDE.matches) openProgressLift = null; renderProgress(); return; }
+    const range = event.target.closest('[data-range]');
+    if (range) { progressRange = range.dataset.range; renderProgressDetail(); return; }
+    if (event.target.closest('[data-act="back"]')) { openProgressLift = null; renderProgress(); }
+});
+document.getElementById('pgSearch').addEventListener('input', renderProgress);
+WIDE.addEventListener('change', function () { if (currentView === 'progress') renderProgress(); });
+
+// ============================================================
+// HISTORY: the session for the day you tap
+// ============================================================
+
+function localDayOf(iso) {
+    const d = new Date(iso);
+    const p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+function sessionKind(workout) {
+    return /^upper/i.test(workout || '') ? 'upper' : /^lower/i.test(workout || '') ? 'lower' : '';
+}
+
+function renderSession() {
+    const real = Lifts.realWorkouts(workoutHistory).slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+    if (!selectedHistoryDay && real.length) selectedHistoryDay = localDayOf(real[0].date);
+
+    // "this week" tile, same count as the header
+    let doneCount = 0;
+    workoutOrder.forEach(function (day) { if (completionData[day]) doneCount++; });
+    const goal = appSettings.split === '2day' ? 2 : 4;
+    document.getElementById('weekCount').textContent = Math.min(goal, doneCount) + ' of ' + goal;
+
+    const lifts = progressLifts();
+    const box = document.getElementById('hsSession');
+    const todays = real.filter(function (h) { return localDayOf(h.date) === selectedHistoryDay; });
+    if (!real.length) {
+        box.innerHTML = '<p class="progress-empty hs-empty">No finished workouts yet. Tap Complete workout at the end of a session and it shows up here.</p>';
+    } else if (!todays.length) {
+        box.innerHTML = '<p class="progress-empty hs-empty">No workout on ' + progressDay(selectedHistoryDay, true) + '.</p>';
+    } else {
+        box.innerHTML = todays.map(function (h) {
+            const rows = (h.exercises || []).map(function (e) {
+                const l = lifts.find(function (x) { return x.lift === (e.lift || Lifts.liftKey(e.name)); });
+                let diff = null;
+                if (l && typeof e.weight === 'number') {
+                    const at = l.points.findIndex(function (pt) { return pt.day === selectedHistoryDay; });
+                    if (at > 0) diff = l.points[at].weight - l.points[at - 1].weight;
+                }
+                const change = diff === null ? '' : diff === 0 ? 'same' : (diff > 0 ? '+' : '−') + progressNum(Math.abs(diff));
+                return '<button type="button" class="hs-lift" data-lift="' + progressText(e.lift || '') + '"><span class="n">' + progressText(e.name) + '</span>' +
+                    '<span class="w">' + progressText(e.weightRaw || '') + (e.reps ? ' × ' + progressText(e.reps) : '') + '</span>' +
+                    '<span class="c ' + (diff > 0 ? 'up' : diff < 0 ? 'down' : '') + '">' + change + '</span></button>';
+            }).join('');
+            return '<div class="progress-list hs-card"><div class="hs-head"><i class="dot ' + sessionKind(h.workout) + '"></i><div><b>' + progressText(dayNames[h.workout] || 'Workout') + '</b>' +
+                '<small>' + new Date(h.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
+                (rows ? ' · ' + h.exercises.length + (h.exercises.length === 1 ? ' lift' : ' lifts') : '') + '</small></div></div>' +
+                (rows || '<p class="progress-empty">Weights were not saved for this one. Sessions finished from Nov 12 on keep them.</p>') + '</div>';
+        }).join('');
+    }
+
+    document.getElementById('hsRecent').innerHTML = real.slice(0, 8).map(function (h) {
+        const day = localDayOf(h.date);
+        return '<button type="button" class="hs-recent' + (day === selectedHistoryDay ? ' sel' : '') + '" data-day="' + day + '"><i class="dot ' + sessionKind(h.workout) + '"></i>' +
+            '<b>' + progressText(dayNames[h.workout] || 'Workout') + '</b><small>' + new Date(h.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + '</small></button>';
+    }).join('') || '<p class="progress-empty">Nothing yet.</p>';
+}
+
+function selectHistoryDay(day) {
+    selectedHistoryDay = day;
+    const p = day.split('-').map(Number);
+    currentCalendarYear = p[0];
+    currentCalendarMonth = p[1] - 1;
+    renderCalendar();
+    renderSession();
+}
+
+document.getElementById('view-history').addEventListener('click', function (event) {
+    const cell = event.target.closest('.calendar-day[data-day]');
+    if (cell) { selectHistoryDay(cell.dataset.day); return; }
+    const recent = event.target.closest('.hs-recent');
+    if (recent) { selectHistoryDay(recent.dataset.day); return; }
+    const lift = event.target.closest('.hs-lift');
+    if (lift && lift.dataset.lift) openLift(lift.dataset.lift);
 });
 
 // Calendar navigation buttons
@@ -1451,7 +1715,7 @@ addExerciseModal.addEventListener('click', function(event) {
     }
 });
 
-const showHistoryModal = document.getElementById('showHistoryModal');
+const showHistoryModal = document.getElementById('showSettings');   // the gear; the sheet now holds settings only
 const historyModal = document.getElementById('historyModal');
 const closeHistoryModal = document.getElementById('closeHistoryModal');
 
@@ -1497,7 +1761,7 @@ function setSplit(mode) {
 
     updateSplitUI();
     updateTabCheckmarks();   // re-dim tabs + refresh week counter
-    renderCalendar();        // refresh the tiles
+    renderHistory();         // refresh the tiles, the calendar and Progress
 
     // land on the pair that's now in play
     const nextTab = document.getElementById('tab-' + getNextIncompleteWorkout());
@@ -1510,7 +1774,6 @@ split4dayBtn.addEventListener('click', function() { setSplit('4day'); });
 split2dayBtn.addEventListener('click', function() { setSplit('2day'); });
 
 showHistoryModal.addEventListener('click', function() {
-    renderHistory();
     updateSplitUI();
     historyModal.classList.add('active');
 });
@@ -1848,6 +2111,7 @@ loadSplitHistory();
 loadWorkoutData();
 loadWorkoutHistory();
 loadCompletionData();
+rerenderAllExercises();   // cards drew before history loaded; redraw for their "last time" lines
 
 // auto-switch to next incomplete workout on page load
 const nextWorkout = getNextIncompleteWorkout();
@@ -1858,3 +2122,15 @@ if (nextTab && !nextTab.classList.contains('active')) {
 
 // make sure the header matches whichever tab ended up active
 updateHeader(document.querySelector('.tab-btn.active').id.replace('tab-', ''));
+
+// tap a card's "last time" line to open that lift in Progress
+document.getElementById('view-train').addEventListener('click', function (event) {
+    const t = event.target.closest('.card-trend');
+    if (t) openLift(t.dataset.lift);
+});
+
+// reopen the view you were on (per tab, so a fresh launch starts on Train)
+let savedView = null;
+try { savedView = sessionStorage.getItem('view'); } catch (e) { /* storage blocked */ }
+showView(savedView === 'progress' || savedView === 'history' ? savedView : 'train');
+
