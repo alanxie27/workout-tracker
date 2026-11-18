@@ -49,6 +49,7 @@
             <button id="tab-lowerA" class="tab-btn">Lower A</button>
             <button id="tab-upperB" class="tab-btn">Upper B</button>
             <button id="tab-lowerB" class="tab-btn">Lower B</button>
+            <p id="railNote" class="rail-note"></p>
         </div>
 
         <!-- WORKOUT SECTIONS: only the one with .active is visible.
@@ -84,6 +85,18 @@
             </div>
             <button class="btn-complete-workout" data-day="lowerB"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Complete Lower B</button>
         </section>
+
+        <!-- WIDE SCREENS ONLY: this session at a glance, plus Complete and Add.
+             Filled by renderTrainSide(); hidden on a phone. -->
+        <aside id="trainSide" class="train-side" aria-label="This session">
+            <p class="f-label">This session</p>
+            <div id="sideStats" class="side-stats"></div>
+            <button id="sideComplete" class="btn-complete-workout" type="button"></button>
+            <button id="sideAdd" class="btn-side-add" type="button">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Add exercise
+            </button>
+            <p class="side-hint">Complete saves today's weights and reps into Progress and History.</p>
+        </aside>
 
         </div>
 

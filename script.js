@@ -637,9 +637,65 @@ function rerenderAllExercises() {
     });
 
     renderAllExercises();
+    renderTrainSide();
 
     scrollToInstant(scrollPos);
 }
+
+// Wide screens: the panel beside the cards. Counts slots (alternatives
+// count once), how the day's lifts are trending, and repeats the Complete
+// and Add buttons so they stay in reach while the cards scroll.
+function renderTrainSide() {
+    const side = document.getElementById('trainSide');
+    if (!side) return;
+    const active = document.querySelector('.workout-day.active');
+    if (!active) return;
+    const day = active.id.replace('-section', '');
+    const list = workoutData[day] || [];
+
+    const slots = {};
+    list.forEach(function (e, i) {
+        const key = e.altGroup ? 'g' + e.altGroup : 'i' + i;
+        slots[key] = slots[key] || !!e.done;
+    });
+    const total = Object.keys(slots).length;
+    const done = Object.keys(slots).filter(function (k) { return slots[k]; }).length;
+
+    let up = 0, hold = 0, bump = 0, slip = 0;
+    list.forEach(function (e) {
+        const l = cardTrendFor(e.name);
+        if (!l) return;
+        if (l.bump) bump++;
+        else if (l.status === 'up') up++;
+        else if (l.status === 'slipping') slip++;
+        else hold++;
+    });
+    const row = function (label, value, tone) {
+        return '<div class="side-row"><span>' + label + '</span><b class="' + (tone || '') + '">' + value + '</b></div>';
+    };
+    document.getElementById('sideStats').innerHTML =
+        row('Checked off', done + ' of ' + total) +
+        (bump ? row('Time to add weight', bump + (bump === 1 ? ' lift' : ' lifts'), 'up') : '') +
+        row('Going up', up + (up === 1 ? ' lift' : ' lifts'), up ? 'up' : '') +
+        row('Holding', hold + (hold === 1 ? ' lift' : ' lifts')) +
+        (slip ? row('Slipping', slip + (slip === 1 ? ' lift' : ' lifts'), 'down') : '');
+
+    const complete = document.getElementById('sideComplete');
+    complete.innerHTML = active.querySelector('.btn-complete-workout').innerHTML;
+
+    let finished = 0;
+    workoutOrder.forEach(function (d) { if (completionData[d]) finished++; });
+    const goal = appSettings.split === '2day' ? 2 : 4;
+    document.getElementById('railNote').textContent = Math.min(goal, finished) + ' of ' + goal + ' done this week';
+}
+
+document.getElementById('sideComplete').addEventListener('click', function () {
+    const active = document.querySelector('.workout-day.active');
+    if (active) active.querySelector('.btn-complete-workout').click();
+});
+document.getElementById('sideAdd').addEventListener('click', function () {
+    document.getElementById('showAddModal').click();
+});
 
 // ============================================================
 // TABS
@@ -668,6 +724,7 @@ tabButtons.forEach(function(button) {
 
         // keep the big header title in sync with the visible day
         updateHeader(workoutDay);
+        renderTrainSide();
     });
 
 });
