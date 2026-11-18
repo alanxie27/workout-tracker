@@ -1233,12 +1233,12 @@ body.pg-open .pg-list { display: none; }
 
 /* ---------- card "last time" line ---------- */
 .card-trend {
-    width: 100%;
+    width: calc(100% - 24px);
     display: flex;
     align-items: center;
     gap: 10px;
     min-height: 44px;
-    margin-top: 10px;
+    margin: 10px 12px 0;
     padding: 6px 12px;
     border-radius: 11px;
     background: var(--card-2);
@@ -1315,13 +1315,55 @@ button.calendar-day:focus-visible { outline: 2px solid var(--brass); outline-off
     header { padding-left: 32px; padding-right: 32px; }
     .views { max-width: 420px; }
 
-    #view-train .exercises-list {
+    /* Train: day rail | one column of cards | this session */
+    #view-train.active {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        grid-template-columns: 180px minmax(0, 1fr) 272px;
+        gap: 28px;
         align-items: start;
+        margin-top: 18px;
     }
-    #view-train .exercises-list > * { margin: 0; }
+    #view-train .tabs {
+        grid-column: 1;
+        grid-row: 1;
+        position: sticky;
+        top: 16px;
+        flex-direction: column;
+        gap: 2px;
+        margin: 0;
+        border-bottom: 0;
+    }
+    #view-train .tab-btn,
+    #view-train .tab-btn.off-cycle {
+        flex: none;
+        justify-content: flex-start;
+        padding: 0 14px;
+        margin: 0;
+        border-bottom: 0;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+    #view-train .tab-btn.active {
+        background: var(--card);
+        box-shadow: inset 3px 0 0 var(--brass), inset 0 0 0 1px var(--line);
+    }
+    #view-train .tab-btn.off-cycle { font-size: 13px; }
+    .rail-note { display: block; padding: 10px 14px 0; font-size: 12px; color: var(--muted); }
+    #view-train .workout-day { grid-column: 2; grid-row: 1; }
+    #view-train .workout-day .btn-complete-workout { display: none; }
+    body[data-view="train"] #showAddModal { display: none; }
+
+    .train-side {
+        grid-column: 3;
+        grid-row: 1;
+        position: sticky;
+        top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .train-side .f-label { margin: 0 2px; }
+    .train-side .btn-complete-workout { display: flex; margin: 0; width: 100%; }
 
     .pg-wrap { display: grid; grid-template-columns: minmax(340px, 420px) 1fr; gap: 28px; align-items: start; }
     body.pg-open .pg-list { display: block; }
@@ -1336,3 +1378,33 @@ button.calendar-day:focus-visible { outline: 2px solid var(--brass); outline-off
     .progress-row.sel:hover { background: var(--brass-soft); }
     .card-trend:hover { border-color: var(--muted); }
 }
+
+/* the wide-screen side panel and rail note only exist at 960px+ */
+@media (max-width: 959px) { .train-side, .rail-note { display: none; } }
+.side-stats {
+    padding: 4px 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+}
+.side-row { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; font-size: 13px; }
+.side-row + .side-row { border-top: 1px solid var(--line); }
+.side-row span { color: var(--muted); }
+.side-row b { font-variant-numeric: tabular-nums; }
+.side-row b.up { color: var(--moss); }
+.side-row b.down { color: var(--ember); }
+.btn-side-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-weight: 600;
+    color: var(--text);
+}
+.btn-side-add:hover { border-color: var(--muted); }
+.btn-side-add:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.side-hint { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0 2px; }
